@@ -16,5 +16,28 @@ ljung_box <- function(r, T, m, p) {
     valor_p = valor_p
   )
   return(resultado)
+}
+
+jarque_bera <- function(e) {
+  N <- length(e)
+  e_media <- mean(e)
+  varianza <- sum((e - e_media)^2) / N
+  # potencia
+  A <- (sum((e - e_media)^3) / N) / (varianza^(3/2))
+  K <- (sum((e - e_media)^4) / N) / (varianza^2)
+  #ecuación de  JB
+  JB <- (N/6) * (A^2 + ((K-3)^2)/4)
+  #grados de libertad
+  gl <- 2 
   
+  valor_critico <- stats::qchisq(0.95, df=2)
+  valor_p <- stats::pchisq(JB, df = 2, lower.tail = FALSE)
+  
+  resultado <- list(
+    estadistico = JB,
+    gl = gl,
+    valor_critico = valor_critico,
+    valor_p = valor_p
+  )
+  return(resultado)
 }

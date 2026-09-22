@@ -1,4 +1,4 @@
-# vamos a empezar solucionar la ecuacion 
+# vamos a empezar solucionar la ecuacion 1 
 ljung_box <- function(r, T, m, p) {
   #suma rezagos  
   terminos <- r^2 / (T - (1:m))
@@ -17,7 +17,7 @@ ljung_box <- function(r, T, m, p) {
   )
   return(resultado)
 }
-
+# solucionamos la ecuacion 2  
 jarque_bera <- function(e) {
   N <- length(e)
   e_media <- mean(e)
@@ -40,4 +40,22 @@ jarque_bera <- function(e) {
     valor_p = valor_p
   )
   return(resultado)
+}
+
+# solucionamos la ecuacion 3
+durbin_watson <- function(e) {
+  
+  T <- length(e)
+  
+  numerador <- sum((e[2:T] - e[1:(T-1)])^2)
+  denominador <- sum(e^2)
+  
+  d <- numerador / denominador
+  
+  return(list(
+    estadistico = d,
+    gl = NA,
+    valor_critico = NA,
+    valor_p = NA
+  ))
 }

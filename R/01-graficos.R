@@ -2,7 +2,7 @@
 library(ggplot2)
 library(tibble)
 library(dplyr)
-library(patchwork)
+
 
 #creamos un grafico donde vemos el comportamiento de los numero de pasajeros usan esa areolinea por año
 graficar_serie <- function(datos, titulo) {

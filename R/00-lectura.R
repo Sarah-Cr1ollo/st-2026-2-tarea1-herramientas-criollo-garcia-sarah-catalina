@@ -26,6 +26,13 @@ leer_serie <- function(x, fuente, unidad) {
       datos_csv <- read.csv(x)
       y <- datos_csv$valor
       fecha <- as.Date(datos_csv$fecha)
+      dif_promedio <- mean(diff(fecha))
+      frec <- dplyr::case_when(
+        dif_promedio < 1 ~ 365,
+        dif_promedio < 35 ~ 12,
+        dif_promedio < 91 ~ 4,
+        TRUE ~ 1
+      )
       n <- length(y)
     }
   # creamos la función que arma una tabla tipo tibble

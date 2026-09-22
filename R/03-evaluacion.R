@@ -59,3 +59,40 @@ durbin_watson <- function(e) {
     valor_p = NA
   ))
 }
+
+# prueba t de media cero donde vamos a validar el error
+
+validar_errores <- function(e, m, p) {
+  prueba_t <- stats::t.test(e, mu = 0)
+  
+  T_e <- length(e)
+  e_media <- mean(e)
+  m_usar <- min(floor(T_e/4), 24)
+  
+  r_errores <- numeric(m_usar)
+  for (h in 1:m_usar) {
+    r_errores[h] <- (sum((e[1:(T_e-h)] - e_media) * (e[(1+h):T_e] - e_media)) / T_e) / (sum((e-e_media)^2)/T_e)
+  }
+  
+  resultado_lb <- ljung_box(r_errores, T_e, m_usar, p)
+  resultado_jb <- jarque_bera(e)
+  resultado_dw <- durbin_watson(e)
+  # grafico de los errores de tiempo 
+  tabla_e <- tibble::tibble(t = seq_len(T_e), error = e)
+  grafico_errores <- ggplot2::ggplot(tabla_e, ggplot2::aes(x = t, y = error)) +
+    ggplot2::geom_line() +
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+    ggplot2::labs(title = "Errores en el tiempo", x = "t", y = "Error")
+  #para el correlograma podemos usar la informacion anteriormente obtenida 
+  tabla_para_correlograma <- tibble::tibble(y = e)
+  grafico_correlograma_e <- correlograma(tabla_para_correlograma, m = m_usar)
+  
+  return(list(
+    prueba_t = prueba_t,
+    ljung_box = resultado_lb,
+    jarque_bera = resultado_jb,
+    durbin_watson = resultado_dw,
+    grafico_errores = grafico_errores,
+    grafico_correlograma = grafico_correlograma_e
+  ))
+}

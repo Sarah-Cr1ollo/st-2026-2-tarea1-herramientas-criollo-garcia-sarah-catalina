@@ -1,5 +1,11 @@
 # el trabajo nos pide una función devuelva un tibble con columnas t, fecha, y
 leer_serie <- function(x, fuente, unidad) { 
+  
+  stopifnot(
+    "error la fuente debe ser texto" = is.character(fuente),
+    "error la unidad debe ser texto" = is.character(unidad),
+    "x debe ser un objeto ts o una ruta de texto" = is.ts(x) || is.character(x)
+  )
   # aqui esta el codigo donde x pasa a ser un ts 
   if (is.ts(x)) {
   # usamos stats para saber el punto exacto donde va a empezar la serie 

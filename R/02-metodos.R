@@ -239,7 +239,7 @@ ajustar_dmm <- function(y, k) {
   return(se)
 }
 
-# funcion de tendencias 
+# 6. funcion de tendencias 
 ajustar_tendencia <- function(y, tipo = c("lineal", "cuadratica", "exponencial"), corregir_sesgo = FALSE) {
   tipo <- match.arg(tipo)
   stopifnot(is.numeric(y), !any(is.na(y)), length(y) >= 4)
@@ -337,7 +337,7 @@ ajustar_tendencia <- function(y, tipo = c("lineal", "cuadratica", "exponencial")
   )
 }
 
-## 6. hallamos la funcion de holt lineal 
+## 7. hallamos la funcion de holt lineal 
 
 ajustar_holt <- function(y, alpha, beta) {
   stopifnot(is.numeric(y), !any(is.na(y)),
@@ -388,4 +388,49 @@ ajustar_holt <- function(y, alpha, beta) {
                       L_final = L_final, T_final = T_final,
                       trayectoria_L = L, trayectoria_T = Tt)
   )
+}
+
+## 8. vamos a realizar el metodo de optimización donde vamos a reunir los otros 6 metodos("mm", "dmm", "ses", "holt")
+
+optimizar <- function(y_estimacion, metodo, rejilla) {
+  
+  # rejilla: vector (mm, dmm, ses) o vector base para el producto (holt)
+  
+  y <- y_estimacion  # alias interno, para no reescribir todo el codigo de abajo
+  
+  calcular_mse <- function(yhat_vec) {
+    e <- y - yhat_vec
+    mean(e^2, na.rm = TRUE)
+  }
+  
+  if (metodo %in% c("mm", "dmm")) {
+    mse <- sapply(rejilla, function(k) {
+      ajuste <- if (metodo == "mm") ajustar_mm(y, k) else ajustar_dmm(y, k)
+      calcular_mse(ajuste$yhat)
+    })
+    resultados <- data.frame(parametro = rejilla, MSE = mse)
+    optimo <- resultados[which.min(resultados$MSE), ]
+    
+  } else if (metodo == "ses") {
+    mse <- sapply(rejilla, function(a) {
+      ajuste <- ajustar_ses(y, a)
+      calcular_mse(ajuste$yhat)
+    })
+    resultados <- data.frame(parametro = rejilla, MSE = mse)
+    optimo <- resultados[which.min(resultados$MSE), ]
+    
+  } else if (metodo == "holt") {
+    combinaciones <- expand.grid(alpha = rejilla, beta = rejilla)
+    combinaciones$MSE <- mapply(function(a, b) {
+      ajuste <- ajustar_holt(y, a, b)
+      calcular_mse(ajuste$yhat)
+    }, combinaciones$alpha, combinaciones$beta)
+    resultados <- combinaciones
+    optimo <- resultados[which.min(resultados$MSE), ]
+    
+  } else {
+    stop("Metodo no reconocido: ", metodo)
+  }
+  
+  list(rejilla_completa = resultados, optimo = optimo)
 }

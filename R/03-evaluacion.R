@@ -97,6 +97,7 @@ validar_errores <- function(e, m, p) {
   ))
 }
 
+
 # creacion de medias (MSE, MAD, MAPE, MASE)
 medidas <- function(y_obs, y_pred, y_entrenamiento = NULL) {
   

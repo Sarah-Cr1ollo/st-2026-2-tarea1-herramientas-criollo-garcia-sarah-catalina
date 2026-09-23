@@ -1,6 +1,6 @@
 ## 8 METODOS 
 
-##  buscamos la media simple (recursiva) 
+##  1. buscamos la media simple (recursiva) 
 
 ajustar_media <- function(y) {
   #usamos is.numeric(y) para convierte a y en un vector
@@ -33,7 +33,7 @@ ajustar_media <- function(y) {
   )
 }
 
-## vamos a trabajar la funcion de la media movil de orden k
+## 2. vamos a trabajar la funcion de la media movil de orden k
 
 ajustar_mm <- function(y, k) {
   stopifnot(is.numeric(y), !any(is.na(y)), k >= 2, k <= length(y))
@@ -68,7 +68,7 @@ ajustar_mm <- function(y, k) {
   )
 }
 
-## vamos a crear la función para el suavizamiento exponencial 
+## 3. vamos a crear la función para el suavizamiento exponencial 
 
 ajustar_ses <- function(y, alpha) {
   stopifnot(is.numeric(y), !any(is.na(y)), alpha > 0, alpha < 1, length(y) >= 2)
@@ -106,7 +106,7 @@ ajustar_ses <- function(y, alpha) {
   )
 }
 
-## vamos a crear la función para el suavizamiento exponencial 
+## 4.vamos a crear la función para la doble media movil
 
 ajustar_dmm <- function(y, k) {
   stopifnot(is.numeric(y), !any(is.na(y)), k >= 2, 2 * k - 1 <= length(y))
@@ -168,7 +168,7 @@ ajustar_dmm <- function(y, k) {
     }
   }
   
-  # --- Segunda media movil (de MM), con suma acumulada ---
+  # Segunda media movil (de MM), con suma acumulada 
   suma_dmm <- sum(MM[k:(2 * k - 1)])
   DMM[2 * k - 1] <- suma_dmm / k
   E[2 * k - 1] <- 2 * MM[2 * k - 1] - DMM[2 * k - 1]
@@ -203,7 +203,7 @@ ajustar_dmm <- function(y, k) {
   )
 }
 
-## vamos a crear la función para la tendencia con base a al fromula requerida
+## 5. vamos a crear la función para la tendencia con base a al fromula requerida
 
 # Paso 1: hallamos el errores estandar robustos, y nos apoyamos en  las puebas de Newey-West y  el nucleo de Bartlett
 .se_robustos_nw <- function(X, residuos) {
@@ -337,3 +337,55 @@ ajustar_tendencia <- function(y, tipo = c("lineal", "cuadratica", "exponencial")
   )
 }
 
+## 6. hallamos la funcion de holt lineal 
+
+ajustar_holt <- function(y, alpha, beta) {
+  stopifnot(is.numeric(y), !any(is.na(y)),
+            alpha > 0, alpha < 1, beta > 0, beta < 1,
+            length(y) >= 3)
+  
+  n <- length(y)
+  L <- rep(NA_real_, n)
+  Tt <- rep(NA_real_, n)
+  yhat <- rep(NA_real_, n)
+  
+  L[1] <- y[1]
+  Tt[1] <- 0
+  
+  for (t in 2:n) {
+    L[t] <- alpha * y[t] + (1 - alpha) * (L[t - 1] + Tt[t - 1])
+    Tt[t] <- beta * (L[t] - L[t - 1]) + (1 - beta) * Tt[t - 1]
+    if (t < n) yhat[t + 1] <- L[t] + Tt[t]
+  }
+  
+  # verificamos la forma de correccion de error
+  L_corr <- rep(NA_real_, n)
+  Tt_corr <- rep(NA_real_, n)
+  L_corr[1] <- y[1]
+  Tt_corr[1] <- 0
+  for (t in 2:n) {
+    yhat_t <- L_corr[t - 1] + Tt_corr[t - 1]
+    e_t <- y[t] - yhat_t
+    L_corr[t] <- L_corr[t - 1] + Tt_corr[t - 1] + alpha * e_t
+    Tt_corr[t] <- Tt_corr[t - 1] + alpha * beta * e_t
+  }
+  dif_L <- max(abs(L - L_corr))
+  dif_T <- max(abs(Tt - Tt_corr))
+  stopifnot(dif_L < 1e-8, dif_T < 1e-8)
+  
+  L_final <- L[n]
+  T_final <- Tt[n]
+  
+  pronosticar <- function(h) {
+    stopifnot(h >= 1)
+    L_final + T_final * (1:h)
+  }
+  
+  list(
+    yhat = yhat,
+    pronosticar = pronosticar,
+    parametros = list(alpha = alpha, beta = beta,
+                      L_final = L_final, T_final = T_final,
+                      trayectoria_L = L, trayectoria_T = Tt)
+  )
+}

@@ -72,7 +72,7 @@ ajustar_ses <- function(y, alpha) {
   stopifnot(is.numeric(y), !any(is.na(y)), alpha > 0, alpha < 1, length(y) >= 2)
   n <- length(y)
   
-  # --- Calculo principal: forma de correccion de error ---
+  # Calculamos la forma de correccion de error
   # yhat_{t+1} = yhat_t + alpha * e_t, donde e_t = y_t - yhat_t
   yhat <- rep(NA_real_, n)
   yhat[2] <- y[1]
@@ -101,5 +101,102 @@ ajustar_ses <- function(y, alpha) {
     yhat = yhat,
     pronosticar = pronosticar,
     parametros = list(alpha = alpha, yhat_final = yhat_T1)
+  )
+}
+
+## vamos a crear la función para el suavizamiento exponencial 
+
+ajustar_dmm <- function(y, k) {
+  stopifnot(is.numeric(y), !any(is.na(y)), k >= 2, 2 * k - 1 <= length(y))
+  
+  n <- length(y)
+  MM <- rep(NA_real_, n)   # MM_t(k), definido para t >= k
+  DMM <- rep(NA_real_, n)  # DMM_t(k), definido para t >= 2k-1
+  E <- rep(NA_real_, n)
+  beta1 <- rep(NA_real_, n)
+  yhat <- rep(NA_real_, n)
+  
+  for (t in k:n) {
+    MM[t] <- mean(y[(t - k + 1):t])
+  }
+  for (t in (2 * k - 1):n) {
+    DMM[t] <- mean(MM[(t - k + 1):t])
+    E[t] <- 2 * MM[t] - DMM[t]
+    beta1[t] <- (2 / (k - 1)) * (MM[t] - DMM[t])
+  }
+  for (t in (2 * k - 1):(n - 1)) {
+    yhat[t + 1] <- E[t] + beta1[t] * 1
+  }
+  
+  E_final <- E[n]
+  beta1_final <- beta1[n]
+  
+  pronosticar <- function(h) {
+    stopifnot(h >= 1)
+    E_final + beta1_final * (1:h)
+  }
+  
+  list(
+    yhat = yhat,
+    pronosticar = pronosticar,
+    parametros = list(k = k, E_final = E_final, beta1_final = beta1_final,
+                      trayectoria_E = E, trayectoria_beta1 = beta1)
+  )
+}
+
+## mejora  de la suma acumulasa que exigue el enunciado 
+
+ajustar_dmm <- function(y, k) {
+  stopifnot(is.numeric(y), !any(is.na(y)), k >= 2, 2 * k - 1 <= length(y))
+  
+  n <- length(y)
+  MM <- rep(NA_real_, n)
+  DMM <- rep(NA_real_, n)
+  E <- rep(NA_real_, n)
+  beta1 <- rep(NA_real_, n)
+  yhat <- rep(NA_real_, n)
+  
+  # --- Primera media movil, con suma acumulada (un solo recorrido) ---
+  suma_mm <- sum(y[1:k])
+  MM[k] <- suma_mm / k
+  if (n > k) {
+    for (t in (k + 1):n) {
+      suma_mm <- suma_mm - y[t - k] + y[t]
+      MM[t] <- suma_mm / k
+    }
+  }
+  
+  # --- Segunda media movil (de MM), con suma acumulada ---
+  suma_dmm <- sum(MM[k:(2 * k - 1)])
+  DMM[2 * k - 1] <- suma_dmm / k
+  E[2 * k - 1] <- 2 * MM[2 * k - 1] - DMM[2 * k - 1]
+  beta1[2 * k - 1] <- (2 / (k - 1)) * (MM[2 * k - 1] - DMM[2 * k - 1])
+  
+  if (n > 2 * k - 1) {
+    for (t in (2 * k):n) {
+      suma_dmm <- suma_dmm - MM[t - k] + MM[t]
+      DMM[t] <- suma_dmm / k
+      E[t] <- 2 * MM[t] - DMM[t]
+      beta1[t] <- (2 / (k - 1)) * (MM[t] - DMM[t])
+    }
+  }
+  
+  for (t in (2 * k - 1):(n - 1)) {
+    yhat[t + 1] <- E[t] + beta1[t] * 1
+  }
+  
+  E_final <- E[n]
+  beta1_final <- beta1[n]
+  
+  pronosticar <- function(h) {
+    stopifnot(h >= 1)
+    E_final + beta1_final * (1:h)
+  }
+  
+  list(
+    yhat = yhat,
+    pronosticar = pronosticar,
+    parametros = list(k = k, E_final = E_final, beta1_final = beta1_final,
+                      trayectoria_E = E, trayectoria_beta1 = beta1)
   )
 }

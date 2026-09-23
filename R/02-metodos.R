@@ -29,3 +29,36 @@ ajustar_media <- function(y) {
     parametros = list(media_final = ybarra_final)
   )
 }
+
+# vamos a trabajar la funcion de la media movil de orden k
+ajustar_mm <- function(y, k) {
+  stopifnot(is.numeric(y), !any(is.na(y)), k >= 2, k <= length(y))
+  
+  n <- length(y)
+  yhat <- rep(NA_real_, n)
+  # creamos la suma de los primeros k valores
+  suma_movil <- sum(y[1:k])
+  yhat[k + 1] <- suma_movil / k
+  
+  # calculamos yhat[t+1] = MM_t(k), valido para t >= k
+  if (n > k + 1) {
+    for (t in (k + 1):(n - 1)) {
+      suma_movil <- suma_movil - y[t - k] + y[t]
+      yhat[t + 1] <- suma_movil / k
+    }
+  }
+  
+  mm_final <- mean(y[(n - k + 1):n])
+  
+  pronosticar <- function(h) {
+    stopifnot(h >= 1)
+    rep(mm_final, h) # repite un valor especifico varias veces
+    
+  }
+  
+  list(
+    yhat = yhat,
+    pronosticar = pronosticar,
+    parametros = list(k = k, mm_final = mm_final)
+  )
+}

@@ -96,3 +96,39 @@ validar_errores <- function(e, m, p) {
     grafico_correlograma = grafico_correlograma_e
   ))
 }
+
+# creacion de medias (MSE, MAD, MAPE, MASE)
+medidas <- function(y_obs, y_pred, y_entrenamiento = NULL) {
+  
+
+  
+  stopifnot(length(y_obs) == length(y_pred))
+  
+  # Quitar NAs (por ejemplo, posiciones de calentamiento)
+  validos <- !is.na(y_pred) & !is.na(y_obs)
+  y_obs <- y_obs[validos]
+  y_pred <- y_pred[validos]
+  n <- length(y_obs)
+  
+  e <- y_obs - y_pred
+  
+  MSE <- mean(e^2)
+  MAD <- mean(abs(e))
+  MAPE <- 100 * mean(abs(e / y_obs))
+  
+  # MASE necesita el MAD del ingenuo dentro del tramo de ESTIMACION
+  if (!is.null(y_entrenamiento)) {
+    e_ingenuo <- diff(y_entrenamiento)  # Y_t - Y_{t-1}
+    MAD_ingenuo <- mean(abs(e_ingenuo))
+    MASE <- MAD / MAD_ingenuo
+  } else {
+    MASE <- NA
+  }
+  return(list(
+    MSE = MSE,
+    MAD = MAD,
+    MAPE = MAPE,
+    MASE = MASE,
+    n = n
+  ))
+}

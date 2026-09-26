@@ -1,7 +1,7 @@
 ---
-title: "Caja de herramientas de pronóstico: ocho métodos escritos a mano en R"
+title: "Tarea #1: ocho métodos escritos a mano en R"
 subtitle: "Series de tiempo univariadas, 3009297 - Semestre 2026-II"
-author: "Tu Nombre Apellido"
+author: "Sarah Catalina Criollo García"
 date: today
 format:
   html:
@@ -16,6 +16,14 @@ execute:
   warning: true
   message: false
 ---
+
+# Introducción
+Este informe muestra el análisis completo de la tarea #1 en R. Incluye ocho métodos de series de tiempo (media simple, media móvil, suavizamiento exponencial simple, doble media móvil, tres tendencias por mínimos cuadrados y Holt lineal), junto con las funciones para leer, graficar y evaluar los datos.
+
+Cada método lo implementé siguiendo las convenciones de inicialización de las notas de clase (Clase 3). La ACF la calculé a mano usando el divisor único T (Definición 2.5), y la verifiqué contra `acf()` de R: la diferencia máxima fue menor a `10^-12`. Las funciones de evaluación (`ljung_box()`, `jarque_bera()`, `durbin_watson()`) las revisé de forma parecida contra sus equivalentes de R base cuando tenía sentido.
+
+Después presento ocho ejemplos, uno por método. Cada uno usa una serie de R cuyo patrón encaja con el supuesto del método (lo verifiqué con el gráfico y el correlograma antes de ajustar nada). En cada caso sigo el protocolo completo: descripción, diagnóstico, partición estimación/validación, ajuste con parámetros optimizados, medidas de error, validación de residuos, comparación contra el pronóstico ingenuo, y conclusión con recomendación. También incluí un contraejemplo, donde aplico a propósito un método sobre una serie que contradice su supuesto, para mostrar con evidencia estadística en qué se nota el fallo.
+
 
 ```{r, echo=FALSE}
 #| label: setup
@@ -47,21 +55,21 @@ frecuencia `r attr(datos_nile, "frecuencia")`, desde `r min(datos_nile$fecha)` h
 `r max(datos_nile$fecha)`, con `r nrow(datos_nile)` observaciones.
 
 ### Patrón y correspondencia con el método
-
+# Gráfica
 ```{r, echo=FALSE}
 #| label: nile-graficos
 #| fig-height: 5
 
 graficar_serie(datos_nile, "Caudal anual del rio Nilo")
 ```
-
+# correlograma
 ```{r, echo=FALSE}
 #| label: nile-correlograma
 #| fig-height: 6
 
 correlograma(datos_nile)
 ```
-
+# Analisis:
 Al observar el gráfico pude apreciar que este no posee una tendencia lineal sostenida (a lo largo del tiempo). La serie parece que presenta una oscilación alrededor de un nivel relativamente estable, aunque también podemos observar que la gráfica posee periodos de cambios bruscos, un claro ejemplo es el año 1880 (el máximo pico) y el año 1913 aprox (el pico de caída).
 El ACF y el PACF tienden a decaer rápidamente a cero (esto pasa dentro de las bandas de confianza). Esta caída representa una serie estacionaria en media.
 
@@ -82,7 +90,7 @@ for (h in 1:m_n) {
 }
 ljung_box(r_nile, T_n, m_n, 0)
 ```
-
+# Hipotesis:
 - H0: la serie es ruido blanco (ρ_h = 0 para todo h) vs H1: no lo es (ρ_h != 0)
 - Estadístico: Q_24 = T(T+2)Σr_h²/(T-h), distribución χ²₂₄ bajo H0
 - Región de rechazo al 5%: Q > 36.41
@@ -179,21 +187,21 @@ La serie `LakeHuron` reporta el nivel anual del lago Hurón, con frecuencia
 `r max(datos_lake$fecha)`, con `r nrow(datos_lake)` observaciones.
 
 ### Patrón y correspondencia con el método
-
+# Gráfico
 ```{r, echo=FALSE}
 #| label: lake-graficos
 #| fig-height: 5
 
 graficar_serie(datos_lake, "Nivel anual del lago Huron")
 ```
-
+# Correlograma
 ```{r, echo=FALSE}
 #| label: lake-correlograma
 #| fig-height: 6
 
 correlograma(datos_lake)
 ```
-
+# Analisis:
 El gráfico nos permite observar una muestra que el modelo tiene un nivel que oscila entre 576 y 582 pies sin tendencia
 a largo plazo ni estacionalidad, solo genera fluctuaciones suaves. El correlograma
 confirma esto: ACF con decaimiento gradual y PACF con un pico dominante en
@@ -215,7 +223,7 @@ for (h in 1:m_l) {
 }
 ljung_box(r_lake, T_l, m_l, 0)
 ```
-
+# Hipotesis:
 - H0: la serie es ruido blanco vs H1: no lo es
 - Estadístico: Q_24, distribución χ²₂₄ bajo H0
 - Región de rechazo al 5%: Q > 36.42
@@ -338,14 +346,14 @@ observaciones. Es un conteo de valores enteros no negativos, incluyendo
 ceros en algunos años.
 
 ### Patrón y correspondencia con el método
-
+# Gráfico
 ```{r, echo=FALSE}
 #| label: disc-graficos
 #| fig-height: 5
 
 graficar_serie(datos3, "Grandes inventos por año")
 ```
-
+# correlograma
 ```{r, echo=FALSE}
 #| label: disc-correlograma
 #| fig-height: 6
@@ -374,7 +382,7 @@ for (h in 1:m_d) {
 }
 ljung_box(r_disc, T_d, m_d, 0)
 ```
-
+# Hipotesis:
 - H0: ruido blanco vs H1: no lo es
 - Estadístico Q_24, χ²₂₄ bajo H0
 - Región de rechazo al 5%: Q > 36.42
@@ -400,7 +408,7 @@ opt_disc$optimo
 alpha_optimo_disc <- opt_disc$optimo$parametro
 ajuste_disc <- ajustar_ses(y_estim3, alpha = alpha_optimo_disc)
 ```
-
+# Grafico comportamiento
 ```{r, echo=FALSE}
 #| label: disc-curva-mse
 #| fig-height: 4
@@ -496,14 +504,14 @@ EE.UU., con frecuencia `r attr(datos_air, "frecuencia")`, desde
 `r nrow(datos_air)` observaciones.
 
 ### Patrón y correspondencia con el método
-
+# Grafico
 ```{r, echo=FALSE}
 #| label: air-graficos
 #| fig-height: 5
 
 graficar_serie(datos_air, "Millas voladas por aerolineas EE.UU.")
 ```
-
+# Correlograma
 ```{r, echo=FALSE}
 #| label: air-correlograma
 #| fig-height: 6
@@ -535,7 +543,7 @@ opt_air$optimo
 k_optimo_air <- opt_air$optimo$parametro
 ajuste_air <- ajustar_dmm(y_estim_air, k = k_optimo_air)
 ```
-
+# Gráfico de comportamiento
 ```{r, echo=FALSE}
 #| label: air-curva-mse
 #| fig-height: 4
@@ -632,14 +640,14 @@ hasta `r max(datos_aus$fecha)`, con `r nrow(datos_aus)` observaciones,
 en unidad: miles de personas.
 
 ### Patrón y correspondencia con el método
-
+# Gráfico
 ```{r, echo=FALSE}
 #| label: aus-graficos
 #| fig-height: 5
 
 graficar_serie(datos_aus, "Poblacion trimestral de Australia")
 ```
-
+# Correlograma
 ```{r, echo=FALSE}
 #| label: aus-correlograma
 #| fig-height: 6
@@ -749,14 +757,14 @@ Loa, Hawaii, con frecuencia `r attr(datos_co2, "frecuencia")`, desde
 `r nrow(datos_co2)` observaciones, en unidad: ppm.
 
 ### Patrón y correspondencia con el método
-
+# Gráfico
 ```{r, echo=FALSE}
 #| label: co2-graficos
 #| fig-height: 5
 
 graficar_serie(datos_co2, "CO2 atmosferico, Mauna Loa")
 ```
-
+# Correlograma
 ```{r, echo=FALSE}
 #| label: co2-correlograma
 #| fig-height: 6
@@ -867,14 +875,14 @@ Johnson & Johnson, con frecuencia `r attr(datos_jj, "frecuencia")`, desde
 `r nrow(datos_jj)` observaciones, en unidad: USD por acción.
 
 ### Patrón y correspondencia con el método
-
+# Grafico
 ```{r, echo=FALSE}
 #| label: jj-graficos
 #| fig-height: 5
 
 graficar_serie(datos_jj, "Ganancias trimestrales Johnson & Johnson")
 ```
-
+# correlograma
 ```{r, echo=FALSE}
 #| label: jj-correlograma
 #| fig-height: 6
@@ -983,14 +991,14 @@ frecuencia calendario real — se trata como serie con paso constante de
 1 minuto.
 
 ### Patrón y correspondencia con el método
-
+# grafico
 ```{r, echo=FALSE}
 #| label: www-graficos
 #| fig-height: 5
 
 graficar_serie(datos_www, "Uso de internet, minuto a minuto")
 ```
-
+# correlograma
 ```{r, echo=FALSE}
 #| label: www-correlograma
 #| fig-height: 6
@@ -1020,7 +1028,7 @@ alpha_opt_www <- opt_www$optimo$alpha
 beta_opt_www <- opt_www$optimo$beta
 ajuste_www <- ajustar_holt(y_estim_www, alpha = alpha_opt_www, beta = beta_opt_www)
 ```
-
+# grafico de comportamiento
 ```{r, echo=FALSE}
 #| label: www-mapa-calor
 #| fig-height: 5
@@ -1114,14 +1122,14 @@ Se aplica intencionalmente la media simple —que asume un nivel
 constante— sobre `AirPassengers`, una serie con tendencia marcada y 
 fuerte estacionalidad mensual, violando directamente el supuesto 
 del método.
-
+# Grafico
 ```{r, echo=FALSE}
 #| label: cx-graficos
 #| fig-height: 5
 
 graficar_serie(datos_cx, "AirPassengers (contraejemplo)")
 ```
-
+# correlograma
 ```{r, echo=FALSE}
 #| label: cx-correlograma
 #| fig-height: 6

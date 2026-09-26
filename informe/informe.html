@@ -6,10 +6,10 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
-<meta name="author" content="Tu Nombre Apellido">
+<meta name="author" content="Sarah Catalina Criollo García">
 <meta name="dcterms.date" content="2026-09-25">
 
-<title>Caja de herramientas de pronóstico: ocho métodos escritos a mano en R</title>
+<title>Tarea #1: ocho métodos escritos a mano en R</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -47,100 +47,158 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">Table of contents</h2>
    
   <ul>
-  <li><a href="#ejemplo-1-media-simple-nile" id="toc-ejemplo-1-media-simple-nile" class="nav-link active" data-scroll-target="#ejemplo-1-media-simple-nile">Ejemplo 1: Media simple — Nile</a>
+  <li><a href="#introducción" id="toc-introducción" class="nav-link active" data-scroll-target="#introducción">Introducción</a>
+  <ul class="collapse">
+  <li><a href="#ejemplo-1-media-simple-nile" id="toc-ejemplo-1-media-simple-nile" class="nav-link" data-scroll-target="#ejemplo-1-media-simple-nile">Ejemplo 1: Media simple — Nile</a>
   <ul class="collapse">
   <li><a href="#descripción-de-la-serie" id="toc-descripción-de-la-serie" class="nav-link" data-scroll-target="#descripción-de-la-serie">Descripción de la serie</a></li>
   <li><a href="#patrón-y-correspondencia-con-el-método" id="toc-patrón-y-correspondencia-con-el-método" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método">Patrón y correspondencia con el método</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#gráfica" id="toc-gráfica" class="nav-link" data-scroll-target="#gráfica">Gráfica</a></li>
+  <li><a href="#correlograma" id="toc-correlograma" class="nav-link" data-scroll-target="#correlograma">correlograma</a></li>
+  <li><a href="#analisis" id="toc-analisis" class="nav-link" data-scroll-target="#analisis">Analisis:</a>
+  <ul class="collapse">
   <li><a href="#prueba-de-hipótesis-ljung-box-sobre-la-serie" id="toc-prueba-de-hipótesis-ljung-box-sobre-la-serie" class="nav-link" data-scroll-target="#prueba-de-hipótesis-ljung-box-sobre-la-serie">Prueba de hipótesis: Ljung-Box sobre la serie</a></li>
+  </ul></li>
+  <li><a href="#hipotesis" id="toc-hipotesis" class="nav-link" data-scroll-target="#hipotesis">Hipotesis:</a>
+  <ul class="collapse">
   <li><a href="#partición-y-ajuste" id="toc-partición-y-ajuste" class="nav-link" data-scroll-target="#partición-y-ajuste">Partición y ajuste</a></li>
   <li><a href="#medidas-de-error" id="toc-medidas-de-error" class="nav-link" data-scroll-target="#medidas-de-error">Medidas de error</a></li>
   <li><a href="#validación-de-errores" id="toc-validación-de-errores" class="nav-link" data-scroll-target="#validación-de-errores">Validación de errores</a></li>
   <li><a href="#comparación-contra-el-ingenuo" id="toc-comparación-contra-el-ingenuo" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo">Comparación contra el ingenuo</a></li>
   <li><a href="#conclusión" id="toc-conclusión" class="nav-link" data-scroll-target="#conclusión">Conclusión</a></li>
   <li><a href="#recomendación" id="toc-recomendación" class="nav-link" data-scroll-target="#recomendación">Recomendación</a></li>
-  </ul></li>
   <li><a href="#ejemplo-2-media-móvil-lakehuron" id="toc-ejemplo-2-media-móvil-lakehuron" class="nav-link" data-scroll-target="#ejemplo-2-media-móvil-lakehuron">Ejemplo 2: Media móvil — LakeHuron</a>
   <ul class="collapse">
   <li><a href="#descripción-de-la-serie-1" id="toc-descripción-de-la-serie-1" class="nav-link" data-scroll-target="#descripción-de-la-serie-1">Descripción de la serie</a></li>
   <li><a href="#patrón-y-correspondencia-con-el-método-1" id="toc-patrón-y-correspondencia-con-el-método-1" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-1">Patrón y correspondencia con el método</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#gráfico" id="toc-gráfico" class="nav-link" data-scroll-target="#gráfico">Gráfico</a></li>
+  <li><a href="#correlograma-1" id="toc-correlograma-1" class="nav-link" data-scroll-target="#correlograma-1">Correlograma</a></li>
+  <li><a href="#analisis-1" id="toc-analisis-1" class="nav-link" data-scroll-target="#analisis-1">Analisis:</a>
+  <ul class="collapse">
   <li><a href="#prueba-de-hipótesis-ljung-box-sobre-la-serie-1" id="toc-prueba-de-hipótesis-ljung-box-sobre-la-serie-1" class="nav-link" data-scroll-target="#prueba-de-hipótesis-ljung-box-sobre-la-serie-1">Prueba de hipótesis: Ljung-Box sobre la serie</a></li>
+  </ul></li>
+  <li><a href="#hipotesis-1" id="toc-hipotesis-1" class="nav-link" data-scroll-target="#hipotesis-1">Hipotesis:</a>
+  <ul class="collapse">
   <li><a href="#optimización-de-k" id="toc-optimización-de-k" class="nav-link" data-scroll-target="#optimización-de-k">Optimización de k</a></li>
   <li><a href="#medidas-de-error-1" id="toc-medidas-de-error-1" class="nav-link" data-scroll-target="#medidas-de-error-1">Medidas de error</a></li>
   <li><a href="#validación-de-errores-1" id="toc-validación-de-errores-1" class="nav-link" data-scroll-target="#validación-de-errores-1">Validación de errores</a></li>
   <li><a href="#comparación-contra-el-ingenuo-1" id="toc-comparación-contra-el-ingenuo-1" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-1">Comparación contra el ingenuo</a></li>
   <li><a href="#conclusión-1" id="toc-conclusión-1" class="nav-link" data-scroll-target="#conclusión-1">Conclusión</a></li>
   <li><a href="#recomendación-1" id="toc-recomendación-1" class="nav-link" data-scroll-target="#recomendación-1">Recomendación</a></li>
-  </ul></li>
   <li><a href="#ejemplo-3-ses-discoveries" id="toc-ejemplo-3-ses-discoveries" class="nav-link" data-scroll-target="#ejemplo-3-ses-discoveries">Ejemplo 3: SES — discoveries</a>
   <ul class="collapse">
   <li><a href="#descripción-de-la-serie-2" id="toc-descripción-de-la-serie-2" class="nav-link" data-scroll-target="#descripción-de-la-serie-2">Descripción de la serie</a></li>
   <li><a href="#patrón-y-correspondencia-con-el-método-2" id="toc-patrón-y-correspondencia-con-el-método-2" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-2">Patrón y correspondencia con el método</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#gráfico-1" id="toc-gráfico-1" class="nav-link" data-scroll-target="#gráfico-1">Gráfico</a></li>
+  <li><a href="#correlograma-2" id="toc-correlograma-2" class="nav-link" data-scroll-target="#correlograma-2">correlograma</a>
+  <ul class="collapse">
   <li><a href="#prueba-de-hipótesis-ljung-box-sobre-la-serie-2" id="toc-prueba-de-hipótesis-ljung-box-sobre-la-serie-2" class="nav-link" data-scroll-target="#prueba-de-hipótesis-ljung-box-sobre-la-serie-2">Prueba de hipótesis: Ljung-Box sobre la serie</a></li>
+  </ul></li>
+  <li><a href="#hipotesis-2" id="toc-hipotesis-2" class="nav-link" data-scroll-target="#hipotesis-2">Hipotesis:</a>
+  <ul class="collapse">
   <li><a href="#optimización-de-alpha" id="toc-optimización-de-alpha" class="nav-link" data-scroll-target="#optimización-de-alpha">Optimización de alpha</a></li>
+  </ul></li>
+  <li><a href="#grafico-comportamiento" id="toc-grafico-comportamiento" class="nav-link" data-scroll-target="#grafico-comportamiento">Grafico comportamiento</a>
+  <ul class="collapse">
   <li><a href="#medidas-de-error-2" id="toc-medidas-de-error-2" class="nav-link" data-scroll-target="#medidas-de-error-2">Medidas de error</a></li>
   <li><a href="#validación-de-errores-2" id="toc-validación-de-errores-2" class="nav-link" data-scroll-target="#validación-de-errores-2">Validación de errores</a></li>
   <li><a href="#comparación-contra-el-ingenuo-2" id="toc-comparación-contra-el-ingenuo-2" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-2">Comparación contra el ingenuo</a></li>
   <li><a href="#conclusión-2" id="toc-conclusión-2" class="nav-link" data-scroll-target="#conclusión-2">Conclusión</a></li>
   <li><a href="#recomendación-2" id="toc-recomendación-2" class="nav-link" data-scroll-target="#recomendación-2">Recomendación</a></li>
-  </ul></li>
   <li><a href="#ejemplo-4-doble-media-móvil-airmiles" id="toc-ejemplo-4-doble-media-móvil-airmiles" class="nav-link" data-scroll-target="#ejemplo-4-doble-media-móvil-airmiles">Ejemplo 4: Doble media móvil — airmiles</a>
   <ul class="collapse">
   <li><a href="#descripción-de-la-serie-3" id="toc-descripción-de-la-serie-3" class="nav-link" data-scroll-target="#descripción-de-la-serie-3">Descripción de la serie</a></li>
   <li><a href="#patrón-y-correspondencia-con-el-método-3" id="toc-patrón-y-correspondencia-con-el-método-3" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-3">Patrón y correspondencia con el método</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#grafico" id="toc-grafico" class="nav-link" data-scroll-target="#grafico">Grafico</a></li>
+  <li><a href="#correlograma-3" id="toc-correlograma-3" class="nav-link" data-scroll-target="#correlograma-3">Correlograma</a>
+  <ul class="collapse">
   <li><a href="#optimización-de-k-1" id="toc-optimización-de-k-1" class="nav-link" data-scroll-target="#optimización-de-k-1">Optimización de k</a></li>
+  </ul></li>
+  <li><a href="#gráfico-de-comportamiento" id="toc-gráfico-de-comportamiento" class="nav-link" data-scroll-target="#gráfico-de-comportamiento">Gráfico de comportamiento</a>
+  <ul class="collapse">
   <li><a href="#medidas-de-error-3" id="toc-medidas-de-error-3" class="nav-link" data-scroll-target="#medidas-de-error-3">Medidas de error</a></li>
   <li><a href="#validación-de-errores-3" id="toc-validación-de-errores-3" class="nav-link" data-scroll-target="#validación-de-errores-3">Validación de errores</a></li>
   <li><a href="#comparación-contra-el-ingenuo-3" id="toc-comparación-contra-el-ingenuo-3" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-3">Comparación contra el ingenuo</a></li>
   <li><a href="#conclusión-3" id="toc-conclusión-3" class="nav-link" data-scroll-target="#conclusión-3">Conclusión</a></li>
   <li><a href="#recomendación-3" id="toc-recomendación-3" class="nav-link" data-scroll-target="#recomendación-3">Recomendación</a></li>
-  </ul></li>
   <li><a href="#ejemplo-5-tendencia-lineal-austres" id="toc-ejemplo-5-tendencia-lineal-austres" class="nav-link" data-scroll-target="#ejemplo-5-tendencia-lineal-austres">Ejemplo 5: Tendencia lineal — austres</a>
   <ul class="collapse">
   <li><a href="#descripción-de-la-serie-4" id="toc-descripción-de-la-serie-4" class="nav-link" data-scroll-target="#descripción-de-la-serie-4">Descripción de la serie</a></li>
   <li><a href="#patrón-y-correspondencia-con-el-método-4" id="toc-patrón-y-correspondencia-con-el-método-4" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-4">Patrón y correspondencia con el método</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#gráfico-2" id="toc-gráfico-2" class="nav-link" data-scroll-target="#gráfico-2">Gráfico</a></li>
+  <li><a href="#correlograma-4" id="toc-correlograma-4" class="nav-link" data-scroll-target="#correlograma-4">Correlograma</a>
+  <ul class="collapse">
   <li><a href="#estimación" id="toc-estimación" class="nav-link" data-scroll-target="#estimación">Estimación</a></li>
   <li><a href="#medidas-de-error-4" id="toc-medidas-de-error-4" class="nav-link" data-scroll-target="#medidas-de-error-4">Medidas de error</a></li>
   <li><a href="#validación-de-errores-4" id="toc-validación-de-errores-4" class="nav-link" data-scroll-target="#validación-de-errores-4">Validación de errores</a></li>
   <li><a href="#comparación-contra-el-ingenuo-4" id="toc-comparación-contra-el-ingenuo-4" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-4">Comparación contra el ingenuo</a></li>
   <li><a href="#conclusión-4" id="toc-conclusión-4" class="nav-link" data-scroll-target="#conclusión-4">Conclusión</a></li>
   <li><a href="#recomendación-4" id="toc-recomendación-4" class="nav-link" data-scroll-target="#recomendación-4">Recomendación</a></li>
-  </ul></li>
   <li><a href="#ejemplo-6-tendencia-cuadrática-co2" id="toc-ejemplo-6-tendencia-cuadrática-co2" class="nav-link" data-scroll-target="#ejemplo-6-tendencia-cuadrática-co2">Ejemplo 6: Tendencia cuadrática — co2</a>
   <ul class="collapse">
   <li><a href="#descripción-de-la-serie-5" id="toc-descripción-de-la-serie-5" class="nav-link" data-scroll-target="#descripción-de-la-serie-5">Descripción de la serie</a></li>
   <li><a href="#patrón-y-correspondencia-con-el-método-5" id="toc-patrón-y-correspondencia-con-el-método-5" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-5">Patrón y correspondencia con el método</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#gráfico-3" id="toc-gráfico-3" class="nav-link" data-scroll-target="#gráfico-3">Gráfico</a></li>
+  <li><a href="#correlograma-5" id="toc-correlograma-5" class="nav-link" data-scroll-target="#correlograma-5">Correlograma</a>
+  <ul class="collapse">
   <li><a href="#estimación-1" id="toc-estimación-1" class="nav-link" data-scroll-target="#estimación-1">Estimación</a></li>
   <li><a href="#medidas-de-error-5" id="toc-medidas-de-error-5" class="nav-link" data-scroll-target="#medidas-de-error-5">Medidas de error</a></li>
   <li><a href="#validación-de-errores-5" id="toc-validación-de-errores-5" class="nav-link" data-scroll-target="#validación-de-errores-5">Validación de errores</a></li>
   <li><a href="#comparación-contra-el-ingenuo-5" id="toc-comparación-contra-el-ingenuo-5" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-5">Comparación contra el ingenuo</a></li>
   <li><a href="#conclusión-5" id="toc-conclusión-5" class="nav-link" data-scroll-target="#conclusión-5">Conclusión</a></li>
   <li><a href="#recomendación-5" id="toc-recomendación-5" class="nav-link" data-scroll-target="#recomendación-5">Recomendación</a></li>
-  </ul></li>
   <li><a href="#ejemplo-7-tendencia-exponencial-johnsonjohnson" id="toc-ejemplo-7-tendencia-exponencial-johnsonjohnson" class="nav-link" data-scroll-target="#ejemplo-7-tendencia-exponencial-johnsonjohnson">Ejemplo 7: Tendencia exponencial — JohnsonJohnson</a>
   <ul class="collapse">
   <li><a href="#descripción-de-la-serie-6" id="toc-descripción-de-la-serie-6" class="nav-link" data-scroll-target="#descripción-de-la-serie-6">Descripción de la serie</a></li>
   <li><a href="#patrón-y-correspondencia-con-el-método-6" id="toc-patrón-y-correspondencia-con-el-método-6" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-6">Patrón y correspondencia con el método</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#grafico-1" id="toc-grafico-1" class="nav-link" data-scroll-target="#grafico-1">Grafico</a></li>
+  <li><a href="#correlograma-6" id="toc-correlograma-6" class="nav-link" data-scroll-target="#correlograma-6">correlograma</a>
+  <ul class="collapse">
   <li><a href="#estimación-2" id="toc-estimación-2" class="nav-link" data-scroll-target="#estimación-2">Estimación</a></li>
   <li><a href="#medidas-de-error-6" id="toc-medidas-de-error-6" class="nav-link" data-scroll-target="#medidas-de-error-6">Medidas de error</a></li>
   <li><a href="#validación-de-errores-6" id="toc-validación-de-errores-6" class="nav-link" data-scroll-target="#validación-de-errores-6">Validación de errores</a></li>
   <li><a href="#comparación-contra-el-ingenuo-6" id="toc-comparación-contra-el-ingenuo-6" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-6">Comparación contra el ingenuo</a></li>
   <li><a href="#conclusión-6" id="toc-conclusión-6" class="nav-link" data-scroll-target="#conclusión-6">Conclusión</a></li>
   <li><a href="#recomendación-6" id="toc-recomendación-6" class="nav-link" data-scroll-target="#recomendación-6">Recomendación</a></li>
-  </ul></li>
   <li><a href="#ejemplo-8-holt-lineal-wwwusage" id="toc-ejemplo-8-holt-lineal-wwwusage" class="nav-link" data-scroll-target="#ejemplo-8-holt-lineal-wwwusage">Ejemplo 8: Holt lineal — WWWusage</a>
   <ul class="collapse">
   <li><a href="#descripción-de-la-serie-7" id="toc-descripción-de-la-serie-7" class="nav-link" data-scroll-target="#descripción-de-la-serie-7">Descripción de la serie</a></li>
   <li><a href="#patrón-y-correspondencia-con-el-método-7" id="toc-patrón-y-correspondencia-con-el-método-7" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-7">Patrón y correspondencia con el método</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#grafico-2" id="toc-grafico-2" class="nav-link" data-scroll-target="#grafico-2">grafico</a></li>
+  <li><a href="#correlograma-7" id="toc-correlograma-7" class="nav-link" data-scroll-target="#correlograma-7">correlograma</a>
+  <ul class="collapse">
   <li><a href="#optimización-de-alpha-beta" id="toc-optimización-de-alpha-beta" class="nav-link" data-scroll-target="#optimización-de-alpha-beta">Optimización de (alpha, beta)</a></li>
+  </ul></li>
+  <li><a href="#grafico-de-comportamiento" id="toc-grafico-de-comportamiento" class="nav-link" data-scroll-target="#grafico-de-comportamiento">grafico de comportamiento</a>
+  <ul class="collapse">
   <li><a href="#medidas-de-error-7" id="toc-medidas-de-error-7" class="nav-link" data-scroll-target="#medidas-de-error-7">Medidas de error</a></li>
   <li><a href="#validación-de-errores-7" id="toc-validación-de-errores-7" class="nav-link" data-scroll-target="#validación-de-errores-7">Validación de errores</a></li>
   <li><a href="#comparación-contra-el-ingenuo-7" id="toc-comparación-contra-el-ingenuo-7" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-7">Comparación contra el ingenuo</a></li>
   <li><a href="#conclusión-7" id="toc-conclusión-7" class="nav-link" data-scroll-target="#conclusión-7">Conclusión</a></li>
   <li><a href="#recomendación-7" id="toc-recomendación-7" class="nav-link" data-scroll-target="#recomendación-7">Recomendación</a></li>
-  </ul></li>
   <li><a href="#ejemplo-9-contraejemplo-media-simple-airpassengers" id="toc-ejemplo-9-contraejemplo-media-simple-airpassengers" class="nav-link" data-scroll-target="#ejemplo-9-contraejemplo-media-simple-airpassengers">Ejemplo 9 (Contraejemplo): Media simple — AirPassengers</a>
   <ul class="collapse">
   <li><a href="#justificación-del-contraejemplo" id="toc-justificación-del-contraejemplo" class="nav-link" data-scroll-target="#justificación-del-contraejemplo">Justificación del contraejemplo</a></li>
+  </ul></li>
+  </ul></li>
+  <li><a href="#correlograma-8" id="toc-correlograma-8" class="nav-link" data-scroll-target="#correlograma-8">correlograma</a>
+  <ul class="collapse">
   <li><a href="#ajuste" id="toc-ajuste" class="nav-link" data-scroll-target="#ajuste">Ajuste</a></li>
   <li><a href="#medidas-de-error-8" id="toc-medidas-de-error-8" class="nav-link" data-scroll-target="#medidas-de-error-8">Medidas de error</a></li>
   <li><a href="#comparación-contra-el-ingenuo-8" id="toc-comparación-contra-el-ingenuo-8" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-8">Comparación contra el ingenuo</a></li>
@@ -154,7 +212,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Caja de herramientas de pronóstico: ocho métodos escritos a mano en R</h1>
+<h1 class="title">Tarea #1: ocho métodos escritos a mano en R</h1>
 <p class="subtitle lead">Series de tiempo univariadas, 3009297 - Semestre 2026-II</p>
 </div>
 
@@ -165,7 +223,7 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Author</div>
     <div class="quarto-title-meta-contents">
-             <p>Tu Nombre Apellido </p>
+             <p>Sarah Catalina Criollo García </p>
           </div>
   </div>
     
@@ -182,6 +240,11 @@ ul.task-list li input[type="checkbox"] {
 
 </header>
 
+<section id="introducción" class="level1">
+<h1>Introducción</h1>
+<p>Este informe muestra el análisis completo de la tarea #1 en R. Incluye ocho métodos de series de tiempo (media simple, media móvil, suavizamiento exponencial simple, doble media móvil, tres tendencias por mínimos cuadrados y Holt lineal), junto con las funciones para leer, graficar y evaluar los datos.</p>
+<p>Cada método lo implementé siguiendo las convenciones de inicialización de las notas de clase (Clase 3). La ACF la calculé a mano usando el divisor único T (Definición 2.5), y la verifiqué contra <code>acf()</code> de R: la diferencia máxima fue menor a <code>10^-12</code>. Las funciones de evaluación (<code>ljung_box()</code>, <code>jarque_bera()</code>, <code>durbin_watson()</code>) las revisé de forma parecida contra sus equivalentes de R base cuando tenía sentido.</p>
+<p>Después presento ocho ejemplos, uno por método. Cada uno usa una serie de R cuyo patrón encaja con el supuesto del método (lo verifiqué con el gráfico y el correlograma antes de ajustar nada). En cada caso sigo el protocolo completo: descripción, diagnóstico, partición estimación/validación, ajuste con parámetros optimizados, medidas de error, validación de residuos, comparación contra el pronóstico ingenuo, y conclusión con recomendación. También incluí un contraejemplo, donde aplico a propósito un método sobre una serie que contradice su supuesto, para mostrar con evidencia estadística en qué se nota el fallo.</p>
 <section id="ejemplo-1-media-simple-nile" class="level2">
 <h2 class="anchored" data-anchor-id="ejemplo-1-media-simple-nile">Ejemplo 1: Media simple — Nile</h2>
 <section id="descripción-de-la-serie" class="level3">
@@ -211,19 +274,29 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="patrón-y-correspondencia-con-el-método" class="level3">
 <h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método">Patrón y correspondencia con el método</h3>
+</section>
+</section>
+</section>
+<section id="gráfica" class="level1">
+<h1>Gráfica</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/nile-graficos-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+<section id="correlograma" class="level1">
+<h1>correlograma</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/nile-correlograma-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+<section id="analisis" class="level1">
+<h1>Analisis:</h1>
 <p>Al observar el gráfico pude apreciar que este no posee una tendencia lineal sostenida (a lo largo del tiempo). La serie parece que presenta una oscilación alrededor de un nivel relativamente estable, aunque también podemos observar que la gráfica posee periodos de cambios bruscos, un claro ejemplo es el año 1880 (el máximo pico) y el año 1913 aprox (el pico de caída). El ACF y el PACF tienden a decaer rápidamente a cero (esto pasa dentro de las bandas de confianza). Esta caída representa una serie estacionaria en media.</p>
 <p>Por las razones mencionadas anteriormente identificamos que la media simple era el mejor modelo para trabajar este primer ejemplo.</p>
-</section>
 <section id="prueba-de-hipótesis-ljung-box-sobre-la-serie" class="level3">
 <h3 class="anchored" data-anchor-id="prueba-de-hipótesis-ljung-box-sobre-la-serie">Prueba de hipótesis: Ljung-Box sobre la serie</h3>
 <div class="cell">
@@ -241,6 +314,10 @@ $valor_p
 [1] 1.439183e-16</code></pre>
 </div>
 </div>
+</section>
+</section>
+<section id="hipotesis" class="level1">
+<h1>Hipotesis:</h1>
 <ul>
 <li>H0: la serie es ruido blanco (ρ_h = 0 para todo h) vs H1: no lo es (ρ_h != 0)</li>
 <li>Estadístico: Q_24 = T(T+2)Σr_h²/(T-h), distribución χ²₂₄ bajo H0</li>
@@ -249,7 +326,6 @@ $valor_p
 <li>Decisión: se rechaza H0</li>
 <li>Lectura: la serie tiene estructura temporal, no es ruido puro — consistente con un nivel que puede cambiar en el tiempo.</li>
 </ul>
-</section>
 <section id="partición-y-ajuste" class="level3">
 <h3 class="anchored" data-anchor-id="partición-y-ajuste">Partición y ajuste</h3>
 <p>Tramo de estimación: t = 1 a 88 (1871-1958). Tramo de validación: h = 12 observaciones (1959-1970), siguiendo h = min(12, ⌊0.2×100⌋) = 12.</p>
@@ -388,7 +464,6 @@ $n
 <h3 class="anchored" data-anchor-id="recomendación">Recomendación</h3>
 <p>Este pronóstico serviría para estimar el caudal medio a largo plazo, por ejemplo para planificación hídrica muy general. Pero no lo usaría para decisiones que dependan del nivel exacto y reciente del río, porque el sesgo de -92.58 unidades está confirmado. Tiene sentido usarlo solo mientras el nivel de la serie se mantenga más o menos estable. De hecho, el límite del método queda claro justo ahí: ese sesgo indica que el supuesto de un nivel constante no se cumple del todo en toda la muestra.92.58 unidades. Sin embargo, los errores no presentan autocorrelación (Ljung-Box p = 0.35) ni problemas de normalidad (Jarque-Bera p = 0.90), lo cual es buena señal.</p>
 </section>
-</section>
 <section id="ejemplo-2-media-móvil-lakehuron" class="level2">
 <h2 class="anchored" data-anchor-id="ejemplo-2-media-móvil-lakehuron">Ejemplo 2: Media móvil — LakeHuron</h2>
 <section id="descripción-de-la-serie-1" class="level3">
@@ -415,18 +490,28 @@ $n
 </section>
 <section id="patrón-y-correspondencia-con-el-método-1" class="level3">
 <h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-1">Patrón y correspondencia con el método</h3>
+</section>
+</section>
+</section>
+<section id="gráfico" class="level1">
+<h1>Gráfico</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/lake-graficos-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+<section id="correlograma-1" class="level1">
+<h1>Correlograma</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/lake-correlograma-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
-<p>El gráfico nos permite observar una muestra que el modelo tiene un nivel que oscila entre 576 y 582 pies sin tendencia a largo plazo ni estacionalidad, solo genera fluctuaciones suaves. El correlograma confirma esto: ACF con decaimiento gradual y PACF con un pico dominante en el rezago 1 (~0.75) — patrón de persistencia de nivel, sin estructura de tendencia, coherente con el supuesto de la media móvil.</p>
 </section>
+<section id="analisis-1" class="level1">
+<h1>Analisis:</h1>
+<p>El gráfico nos permite observar una muestra que el modelo tiene un nivel que oscila entre 576 y 582 pies sin tendencia a largo plazo ni estacionalidad, solo genera fluctuaciones suaves. El correlograma confirma esto: ACF con decaimiento gradual y PACF con un pico dominante en el rezago 1 (~0.75) — patrón de persistencia de nivel, sin estructura de tendencia, coherente con el supuesto de la media móvil.</p>
 <section id="prueba-de-hipótesis-ljung-box-sobre-la-serie-1" class="level3">
 <h3 class="anchored" data-anchor-id="prueba-de-hipótesis-ljung-box-sobre-la-serie-1">Prueba de hipótesis: Ljung-Box sobre la serie</h3>
 <div class="cell">
@@ -444,6 +529,10 @@ $valor_p
 [1] 2.468367e-30</code></pre>
 </div>
 </div>
+</section>
+</section>
+<section id="hipotesis-1" class="level1">
+<h1>Hipotesis:</h1>
 <ul>
 <li>H0: la serie es ruido blanco vs H1: no lo es</li>
 <li>Estadístico: Q_24, distribución χ²₂₄ bajo H0</li>
@@ -452,7 +541,6 @@ $valor_p
 <li>Decisión: se rechaza H0</li>
 <li>Lectura: fuerte estructura de persistencia temporal, coherente con un método de nivel.</li>
 </ul>
-</section>
 <section id="optimización-de-k" class="level3">
 <h3 class="anchored" data-anchor-id="optimización-de-k">Optimización de k</h3>
 <div class="cell">
@@ -602,7 +690,6 @@ $n
 <h3 class="anchored" data-anchor-id="recomendación-1">Recomendación</h3>
 <p>Este pronóstico podría servir como referencia de corto plazo para el manejo operativo del nivel del lago (por ejemplo, para navegación o gestión portuaria), ya que mejora lo que hace el modelo ingenuo. Sin embargo, la autocorrelación residual sugiere que k = 2 es muy corto para capturar toda la estructura de la serie, y un método más flexible (como Holt) podría anticipar mejor los cambios de nivel a mediano plazo.</p>
 </section>
-</section>
 <section id="ejemplo-3-ses-discoveries" class="level2">
 <h2 class="anchored" data-anchor-id="ejemplo-3-ses-discoveries">Ejemplo 3: SES — discoveries</h2>
 <section id="descripción-de-la-serie-2" class="level3">
@@ -629,18 +716,25 @@ $n
 </section>
 <section id="patrón-y-correspondencia-con-el-método-2" class="level3">
 <h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-2">Patrón y correspondencia con el método</h3>
+</section>
+</section>
+</section>
+<section id="gráfico-1" class="level1">
+<h1>Gráfico</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/disc-graficos-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+<section id="correlograma-2" class="level1">
+<h1>correlograma</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/disc-correlograma-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
 <p>La serie oscila con bastante ruido alrededor de un nivel relativamente estable (mayormente entre 0 y 7), sin tendencia de largo plazo clara. El correlograma muestra solo los rezagos 1-2 levemente fuera de la banda, sin estructura fuerte — corresponde al supuesto de SES: nivel con actualización suave, sin tendencia.</p>
-</section>
 <section id="prueba-de-hipótesis-ljung-box-sobre-la-serie-2" class="level3">
 <h3 class="anchored" data-anchor-id="prueba-de-hipótesis-ljung-box-sobre-la-serie-2">Prueba de hipótesis: Ljung-Box sobre la serie</h3>
 <div class="cell">
@@ -658,6 +752,10 @@ $valor_p
 [1] 0.05184948</code></pre>
 </div>
 </div>
+</section>
+</section>
+<section id="hipotesis-2" class="level1">
+<h1>Hipotesis:</h1>
 <ul>
 <li>H0: ruido blanco vs H1: no lo es</li>
 <li>Estadístico Q_24, χ²₂₄ bajo H0</li>
@@ -666,7 +764,6 @@ $valor_p
 <li>Decisión: NO se rechaza H0 (aunque muy cerca del límite del 5%)</li>
 <li>Lectura: la serie está en el borde entre ruido blanco y algo de estructura débil, coherente con elegir un método simple como SES.</li>
 </ul>
-</section>
 <section id="optimización-de-alpha" class="level3">
 <h3 class="anchored" data-anchor-id="optimización-de-alpha">Optimización de alpha</h3>
 <div class="cell">
@@ -675,13 +772,16 @@ $valor_p
 11      0.22 5.160193</code></pre>
 </div>
 </div>
+</section>
+</section>
+<section id="grafico-comportamiento" class="level1">
+<h1>Grafico comportamiento</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/disc-curva-mse-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
 <p>Se evaluó alpha = 0.02 a 0.98. El óptimo cayó en alpha=0.22 (MSE=5.16), un punto interior claro (no en el borde de la rejilla), indicando que conviene ponderar considerablemente la historia acumulada por encima del dato más reciente, coherente con una serie ruidosa sin tendencia.</p>
-</section>
 <section id="medidas-de-error-2" class="level3">
 <h3 class="anchored" data-anchor-id="medidas-de-error-2">Medidas de error</h3>
 <div class="cell">
@@ -816,7 +916,6 @@ $n
 <h3 class="anchored" data-anchor-id="recomendación-2">Recomendación</h3>
 <p>Este pronóstico le serviría a un historiador de la ciencia o a un organismo de política científica que necesite una referencia sencilla del ritmo esperado de grandes descubrimientos por año. Es útil para reportes generales de tendencia, no para predecir con precisión un año en particular. Hay dos límites claros: como los errores no son normales, los intervalos de confianza basados en la normal no son del todo confiables, y el MAPE no sirve para series con ceros, así que cualquier evaluación debería apoyarse en MSE, MAD o MASE, y no en el MAPE.</p>
 </section>
-</section>
 <section id="ejemplo-4-doble-media-móvil-airmiles" class="level2">
 <h2 class="anchored" data-anchor-id="ejemplo-4-doble-media-móvil-airmiles">Ejemplo 4: Doble media móvil — airmiles</h2>
 <section id="descripción-de-la-serie-3" class="level3">
@@ -843,18 +942,25 @@ $n
 </section>
 <section id="patrón-y-correspondencia-con-el-método-3" class="level3">
 <h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-3">Patrón y correspondencia con el método</h3>
+</section>
+</section>
+</section>
+<section id="grafico" class="level1">
+<h1>Grafico</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/air-graficos-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+<section id="correlograma-3" class="level1">
+<h1>Correlograma</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/air-correlograma-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
 <p>El gráfico presenta una muestra una tendencia claramente creciente y sostenida a lo largo de toda la serie, sin patrón estacional (es anual). Esto corresponde directamente al supuesto de la doble media móvil, que está diseñada específicamente para capturar nivel Y pendiente, a diferencia de la media móvil simple.</p>
-</section>
 <section id="optimización-de-k-1" class="level3">
 <h3 class="anchored" data-anchor-id="optimización-de-k-1">Optimización de k</h3>
 <div class="cell">
@@ -863,13 +969,16 @@ $n
 1         2 980548.4</code></pre>
 </div>
 </div>
+</section>
+</section>
+<section id="gráfico-de-comportamiento" class="level1">
+<h1>Gráfico de comportamiento</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/air-curva-mse-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
 <p>Rejilla ajustada a k=2:10 (en vez de 2:12), porque el tramo de estimación tiene solo 20 observaciones, y la doble media móvil exige 2k-1 ≤ n.&nbsp; El óptimo cayó en k=2 (MSE=980,548.4), el borde inferior de la rejilla, indicando que con una tendencia tan marcada, una ventana corta permite seguir mejor el crecimiento sin diluirlo con promedios largos.</p>
-</section>
 <section id="medidas-de-error-3" class="level3">
 <h3 class="anchored" data-anchor-id="medidas-de-error-3">Medidas de error</h3>
 <div class="cell">
@@ -1004,7 +1113,6 @@ $n
 <h3 class="anchored" data-anchor-id="recomendación-3">Recomendación</h3>
 <p>Este pronóstico le serviría a un analista de la industria aérea que necesite proyectar el crecimiento del tráfico de pasajeros a corto plazo (uno o dos años) para planear capacidad. El límite claro es que la serie es muy corta (solo 24 observaciones en total), lo que dificulta elegir un k robusto y también vuelve menos confiables las pruebas de diagnóstico sobre los errores. Cualquier uso de este pronóstico debería tener en cuenta esa fragilidad estadística y no extenderse a horizontes largos.</p>
 </section>
-</section>
 <section id="ejemplo-5-tendencia-lineal-austres" class="level2">
 <h2 class="anchored" data-anchor-id="ejemplo-5-tendencia-lineal-austres">Ejemplo 5: Tendencia lineal — austres</h2>
 <section id="descripción-de-la-serie-4" class="level3">
@@ -1031,18 +1139,25 @@ $n
 </section>
 <section id="patrón-y-correspondencia-con-el-método-4" class="level3">
 <h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-4">Patrón y correspondencia con el método</h3>
+</section>
+</section>
+</section>
+<section id="gráfico-2" class="level1">
+<h1>Gráfico</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/aus-graficos-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+<section id="correlograma-4" class="level1">
+<h1>Correlograma</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/aus-correlograma-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
 <p>El gráfico muestra un crecimiento sostenido y aproximadamente constante en el tiempo. La PACF muestra un valor cercano a 1 en el rezago 1, con el resto de rezagos visualmente pequeños en comparación — patrón típico de una serie con tendencia fuerte, correspondiente al supuesto de la tendencia lineal.</p>
-</section>
 <section id="estimación" class="level3">
 <h3 class="anchored" data-anchor-id="estimación">Estimación</h3>
 <div class="cell">
@@ -1188,7 +1303,6 @@ $n
 <h3 class="anchored" data-anchor-id="recomendación-4">Recomendación</h3>
 <p>Este pronóstico le serviría a una agencia de planeación urbana o demográfica que necesite proyectar el crecimiento poblacional de Australia para decisiones de infraestructura a mediano plazo (vivienda, transporte, servicios públicos). El límite claro es la fuerte autocorrelación residual: cualquier intervalo de confianza construido con los errores estándar ordinarios sería poco confiable (por eso también reporto los robustos), y sería bueno complementar este pronóstico con un modelo con más estructura antes de usarlo para decisiones de alta precisión o de muy corto plazo.</p>
 </section>
-</section>
 <section id="ejemplo-6-tendencia-cuadrática-co2" class="level2">
 <h2 class="anchored" data-anchor-id="ejemplo-6-tendencia-cuadrática-co2">Ejemplo 6: Tendencia cuadrática — co2</h2>
 <section id="descripción-de-la-serie-5" class="level3">
@@ -1215,18 +1329,25 @@ $n
 </section>
 <section id="patrón-y-correspondencia-con-el-método-5" class="level3">
 <h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-5">Patrón y correspondencia con el método</h3>
+</section>
+</section>
+</section>
+<section id="gráfico-3" class="level1">
+<h1>Gráfico</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/co2-graficos-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+<section id="correlograma-5" class="level1">
+<h1>Correlograma</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/co2-correlograma-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
 <p>En el gráfico podemos observarque la muestra una tendencia creciente con clara curvatura (aceleración) a lo largo de la serie, superpuesta a un ciclo estacional mensual marcado. La curvatura de largo plazo corresponde al supuesto de la tendencia cuadrática, aunque la estacionalidad presente no es capturada por ningún componente del modelo — limitación relevante que se discute más abajo.</p>
-</section>
 <section id="estimación-1" class="level3">
 <h3 class="anchored" data-anchor-id="estimación-1">Estimación</h3>
 <div class="cell">
@@ -1373,7 +1494,6 @@ $n
 <h3 class="anchored" data-anchor-id="recomendación-5">Recomendación</h3>
 <p>Este pronóstico le serviría a un organismo de política climática que necesite proyectar la trayectoria de largo plazo del CO2 atmosférico para escenarios de varias décadas (por ejemplo, para acuerdos de reducción de emisiones), donde lo relevante es la curvatura de aceleración y el ciclo mensual es ruido que no importa a esa escala. El límite es claro: no sirve para pronósticos mes a mes, donde la estacionalidad domina el error. Para eso haría falta un modelo con componente estacional explícito, que está fuera del alcance de los 8 métodos de esta caja de herramientas.</p>
 </section>
-</section>
 <section id="ejemplo-7-tendencia-exponencial-johnsonjohnson" class="level2">
 <h2 class="anchored" data-anchor-id="ejemplo-7-tendencia-exponencial-johnsonjohnson">Ejemplo 7: Tendencia exponencial — JohnsonJohnson</h2>
 <section id="descripción-de-la-serie-6" class="level3">
@@ -1400,18 +1520,25 @@ $n
 </section>
 <section id="patrón-y-correspondencia-con-el-método-6" class="level3">
 <h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-6">Patrón y correspondencia con el método</h3>
+</section>
+</section>
+</section>
+<section id="grafico-1" class="level1">
+<h1>Grafico</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/jj-graficos-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+<section id="correlograma-6" class="level1">
+<h1>correlograma</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/jj-correlograma-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
 <p>El gráfico opdemos observar un crecimiento marcadamente multiplicativo (exponencial): la serie presenta un crecimiento cada vez más rápido en términos absolutos, con oscilaciones(cambios) que también aumentan de amplitud proporcionalmente al nivel — patrón característico de crecimiento porcentual constante, correspondiente al supuesto de la tendencia exponencial. Hay además estacionalidad trimestral visible, no capturada por este método.</p>
-</section>
 <section id="estimación-2" class="level3">
 <h3 class="anchored" data-anchor-id="estimación-2">Estimación</h3>
 <div class="cell">
@@ -1557,7 +1684,6 @@ $n
 <h3 class="anchored" data-anchor-id="recomendación-6">Recomendación</h3>
 <p>Este serviría a un analista financiero que proyecta el crecimiento de largo plazo de las ganancias de la empresa para valorar la acción (por ejemplo, en un modelo de descuento de flujos), donde lo que importa es la tasa de crecimiento sostenida y no el resultado exacto de un trimestre. El límite es doble: (1) igual que con el CO2, este modelo solo captura la trayectoria de largo plazo, no el patrón trimestral, así que sirve para proyecciones de varios años pero no para el trimestre siguiente exacto; y (2) como los residuos no son normales, cualquier intervalo de confianza o prueba basada en la normal es poco confiable para esta serie.</p>
 </section>
-</section>
 <section id="ejemplo-8-holt-lineal-wwwusage" class="level2">
 <h2 class="anchored" data-anchor-id="ejemplo-8-holt-lineal-wwwusage">Ejemplo 8: Holt lineal — WWWusage</h2>
 <section id="descripción-de-la-serie-7" class="level3">
@@ -1584,18 +1710,25 @@ $n
 </section>
 <section id="patrón-y-correspondencia-con-el-método-7" class="level3">
 <h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-7">Patrón y correspondencia con el método</h3>
+</section>
+</section>
+</section>
+<section id="grafico-2" class="level1">
+<h1>grafico</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/www-graficos-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+<section id="correlograma-7" class="level1">
+<h1>correlograma</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/www-correlograma-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
 <p>El gráfico muestra tramos con tendencia clara (subidas y bajadas sostenidas), sin estacionalidad, correspondiente al supuesto de Holt: nivel + pendiente que cambian en el tiempo.</p>
-</section>
 <section id="optimización-de-alpha-beta" class="level3">
 <h3 class="anchored" data-anchor-id="optimización-de-alpha-beta">Optimización de (alpha, beta)</h3>
 <div class="cell">
@@ -1604,13 +1737,16 @@ $n
 361  0.95 0.95 13.73749</code></pre>
 </div>
 </div>
+</section>
+</section>
+<section id="grafico-de-comportamiento" class="level1">
+<h1>grafico de comportamiento</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/www-mapa-calor-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
 <p>Se evaluó la rejilla completa alpha=beta=seq(0.05,0.95,by=0.05) (19×19=361 combinaciones). El óptimo cayó en alpha=0.95, beta=0.95 (MSE=13.74), ambos en el borde superior de la rejilla — esto indica que el nivel y la pendiente de esta serie cambian rápidamente, así que el método necesita casi ignorar la historia antigua y adaptarse casi por completo a lo más reciente, coherente con datos de tráfico de red que pueden cambiar de régimen abruptamente.</p>
-</section>
 <section id="medidas-de-error-7" class="level3">
 <h3 class="anchored" data-anchor-id="medidas-de-error-7">Medidas de error</h3>
 <div class="cell">
@@ -1745,7 +1881,6 @@ $n
 <h3 class="anchored" data-anchor-id="recomendación-7">Recomendación</h3>
 <p>El pronóstico prodria usarse en un administrador de infraestructura de red que necesite anticipar cambios de tráfico minuto a minuto para dimensionar recursos de servidor de forma dinámica (auto-escalado). El límite claro es que valores tan altos de alpha y beta (0.95 en ambos) hacen que el método sea muy sensible al ruido de corto plazo: sirve para anticipar cambios rápidos de tendencia, pero es poco estable si se necesita un pronóstico suave o si la serie tuviera datos atípicos puntuales, porque el método los seguiría casi de inmediato.</p>
 </section>
-</section>
 <section id="ejemplo-9-contraejemplo-media-simple-airpassengers" class="level2">
 <h2 class="anchored" data-anchor-id="ejemplo-9-contraejemplo-media-simple-airpassengers">Ejemplo 9 (Contraejemplo): Media simple — AirPassengers</h2>
 <section id="justificación-del-contraejemplo" class="level3">
@@ -1768,18 +1903,22 @@ $n
 # ℹ 134 more rows</code></pre>
 </div>
 </div>
-<p>Se aplica intencionalmente la media simple —que asume un nivel constante— sobre <code>AirPassengers</code>, una serie con tendencia marcada y fuerte estacionalidad mensual, violando directamente el supuesto del método.</p>
+<p>Se aplica intencionalmente la media simple —que asume un nivel constante— sobre <code>AirPassengers</code>, una serie con tendencia marcada y fuerte estacionalidad mensual, violando directamente el supuesto del método. # Grafico</p>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/cx-graficos-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
+</section>
+</section>
+</section>
+<section id="correlograma-8" class="level1">
+<h1>correlograma</h1>
 <div class="cell">
 <div class="cell-output-display">
 <p><img src="informe_files/figure-html/cx-correlograma-1.png" class="img-fluid" width="768"></p>
 </div>
 </div>
-</section>
 <section id="ajuste" class="level3">
 <h3 class="anchored" data-anchor-id="ajuste">Ajuste</h3>
 </section>

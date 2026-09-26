@@ -23,7 +23,7 @@ leer_serie <- function(x, fuente, unidad) {
       "365" = "day",
       stop("Frecuencia no reconocida: ", frec)
     )
-    f_inicio <- as.Date(paste(inicio[1], inicio[2], 1, sep = "-"))
+    f_inicio <- as.Date(sprintf("%04d-%02d-%02d", inicio[1], inicio[2], 1))
     fecha <- seq(f_inicio, by = unidad_time, length.out = n)
     
     

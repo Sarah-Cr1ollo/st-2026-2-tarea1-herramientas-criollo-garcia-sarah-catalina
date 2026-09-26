@@ -19,7 +19,7 @@ graficar_serie <- function(datos, titulo) {
       y = unidad,
       caption = paste("Fuente:", fuente, ". n =", n, "observaciones")
     ) +
-    ggplot2::scale_x_date(date_labels = "%Y", date_breaks = "2 years")
+    ggplot2::scale_x_date(date_labels = "%Y")
   
   return(grafico)
 }

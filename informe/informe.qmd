@@ -1,0 +1,1205 @@
+---
+title: "Caja de herramientas de pronóstico: ocho métodos escritos a mano en R"
+subtitle: "Series de tiempo univariadas, 3009297 - Semestre 2026-II"
+author: "Tu Nombre Apellido"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    code-fold: show
+    theme: cosmo
+    fig-width: 8
+    fig-height: 5
+execute:
+  echo: true
+  warning: true
+  message: false
+---
+
+```{r, echo=FALSE}
+#| label: setup
+#| include: false
+
+archivos_R <- list.files(here::here("R"), pattern = "\\.R$", full.names = TRUE)
+for (archivo in archivos_R) source(archivo)
+
+library(ggplot2)
+library(patchwork)
+library(dplyr)
+
+set.seed(123)
+```
+
+## Ejemplo 1: Media simple — Nile
+
+### Descripción de la serie
+
+```{r, echo=FALSE}
+#| label: nile-lectura
+datos_nile <- leer_serie(Nile, fuente = "R datasets (Nile)", unidad = "10^8 m^3")
+datos_nile
+attr(datos_nile, "frecuencia")
+```
+
+La serie `Nile` reporta el flujo anual del río Nilo medido en Aswan, con
+frecuencia `r attr(datos_nile, "frecuencia")`, desde `r min(datos_nile$fecha)` hasta
+`r max(datos_nile$fecha)`, con `r nrow(datos_nile)` observaciones.
+
+### Patrón y correspondencia con el método
+
+```{r, echo=FALSE}
+#| label: nile-graficos
+#| fig-height: 5
+
+graficar_serie(datos_nile, "Caudal anual del rio Nilo")
+```
+
+```{r, echo=FALSE}
+#| label: nile-correlograma
+#| fig-height: 6
+
+correlograma(datos_nile)
+```
+
+Al observar el gráfico pude apreciar que este no posee una tendencia lineal sostenida (a lo largo del tiempo). La serie parece que presenta una oscilación alrededor de un nivel relativamente estable, aunque también podemos observar que la gráfica posee periodos de cambios bruscos, un claro ejemplo es el año 1880 (el máximo pico) y el año 1913 aprox (el pico de caída).
+El ACF y el PACF tienden a decaer rápidamente a cero (esto pasa dentro de las bandas de confianza). Esta caída representa una serie estacionaria en media.
+
+Por las razones mencionadas anteriormente identificamos que la media simple era el mejor modelo para trabajar este primer ejemplo.
+
+### Prueba de hipótesis: Ljung-Box sobre la serie
+
+```{r, echo=FALSE}
+#| label: nile-ljungbox-serie
+
+T_n <- nrow(datos_nile)
+m_n <- min(floor(T_n/4), 24)
+y_n <- datos_nile$y
+media_n <- mean(y_n)
+r_nile <- numeric(m_n)
+for (h in 1:m_n) {
+  r_nile[h] <- (sum((y_n[1:(T_n-h)] - media_n) * (y_n[(1+h):T_n] - media_n)) / T_n) / (sum((y_n-media_n)^2)/T_n)
+}
+ljung_box(r_nile, T_n, m_n, 0)
+```
+
+- H0: la serie es ruido blanco (ρ_h = 0 para todo h) vs H1: no lo es (ρ_h != 0)
+- Estadístico: Q_24 = T(T+2)Σr_h²/(T-h), distribución χ²₂₄ bajo H0
+- Región de rechazo al 5%: Q > 36.41
+- Valor observado: Q = 130.18, valor p ≈ 0
+- Decisión: se rechaza H0
+- Lectura: la serie tiene estructura temporal, no es ruido puro — consistente con un nivel que puede cambiar en el tiempo.
+
+### Partición y ajuste
+Tramo de estimación: t = 1 a 88 (1871-1958).
+Tramo de validación: h = 12 observaciones (1959-1970), siguiendo h = min(12, ⌊0.2×100⌋) = 12.
+
+```{r, echo=FALSE}
+#| label: nile-ajuste
+
+n_nile <- nrow(datos_nile)
+h_nile <- min(12, floor(0.2 * n_nile))
+corte_nile <- n_nile - h_nile
+y_estim_nile <- datos_nile$y[1:corte_nile]
+y_valid_nile <- datos_nile$y[(corte_nile+1):n_nile]
+
+ajuste_nile <- ajustar_media(y_estim_nile)
+```
+
+### Medidas de error
+
+```{r, echo=FALSE}
+#| label: nile-medidas
+
+medidas(y_estim_nile, ajuste_nile$yhat)
+
+pron_nile <- ajuste_nile$pronosticar(h_nile)
+medidas(y_valid_nile, pron_nile, y_entrenamiento = y_estim_nile)
+```
+
+Un paso (estimación): MSE = 31112.49, MAD = 145.06, MAPE = 17.89%
+Extramuestral (validación): MSE = 19867.93, MAD = 111.99, MAPE = 13.59%, MASE = 0.843
+
+### Validación de errores
+
+```{r, echo=FALSE}
+#| label: nile-validacion
+#| fig-height: 6
+
+errores_nile <- y_estim_nile - ajuste_nile$yhat
+errores_nile_validos <- errores_nile[!is.na(errores_nile)]
+validacion_nile <- validar_errores(errores_nile_validos, m = min(floor(length(errores_nile_validos)/4), 24), p = 0)
+validacion_nile$prueba_t
+validacion_nile$ljung_box
+validacion_nile$jarque_bera
+validacion_nile$durbin_watson
+validacion_nile$grafico_errores
+```
+
+- Prueba t de media cero: t = -5.72, gl = 86, región de rechazo |t| > [valor crítico t con 86 gl al 5%], valor p = 1.53e-07 → se rechaza H0. Los errores tienen media -92.58, significativamente distinta de cero: el método sobreestima sistemáticamente el caudal en el tramo de estimación.
+
+- Ljung-Box sobre errores: Q_21 = 22.84 (gl = m-p = 21-0), valor crítico 32.67, valor p = 0.35 → no se rechaza H0, errores sin autocorrelación.
+- Jarque-Bera: JB = 0.21, gl = 2, valor crítico 5.99, valor p = 0.90 → no se rechaza normalidad.
+
+- Durbin-Watson: d = 0.96, alejado de 2, lo que sugiere posible autocorrelación positiva residual pese al resultado de Ljung-Box — matiz a considerar.
+
+### Comparación contra el ingenuo
+
+```{r, echo=FALSE}
+#| label: nile-ingenuo
+
+pron_ingenuo_nile <- rep(y_estim_nile[corte_nile], h_nile)
+medidas(y_valid_nile, pron_ingenuo_nile, y_entrenamiento = y_estim_nile)
+```
+
+Ingenuo (validación): MSE = 19685.00, MAD = 111.00, MAPE = 13.45%
+El resultado obtenido en el modelo nos indicó que la media simple queda prácticamente empatada con el ingenuo (parte 7), ligeramente peor en las tres métricas. La diferencia entre ellos es que el ingenuo usa solo el último dato, mientras la media simple arrastra el sesgo de toda la historia (confirmado por la prueba t de sesgo).
+
+### Conclusión
+Ajusté el modelo de media simple (recursiva) sobre el caudal del Nilo, que no tiene parámetros que estimar. En el tramo de validación, obtuve un MASE de 0.843, muy parecido al del pronóstico ingenuo (MSE de 19867.93 frente a 19685.00 del ingenuo). Al revisar los errores, encontré que el modelo tiene sesgo claro y significativo (t = -5.72, p = 1.53e-07): el método sobreestima el caudal en promedio unos 92.58 unidades. Sin embargo, los errores no presentan autocorrelación (Ljung-Box p = 0.35) ni problemas de normalidad (Jarque-Bera p = 0.90), lo cual es buena señal.
+
+### Recomendación
+Este pronóstico serviría para estimar el caudal medio a largo plazo, por ejemplo para planificación hídrica muy general. Pero no lo usaría para decisiones que dependan del nivel exacto y reciente del río, porque el sesgo de -92.58 unidades está confirmado. Tiene sentido usarlo solo mientras el nivel de la serie se mantenga más o menos estable. De hecho, el límite del método queda claro justo ahí: ese sesgo indica que el supuesto de un nivel constante no se cumple del todo en toda la muestra.92.58 unidades. Sin embargo, los errores no presentan autocorrelación (Ljung-Box p = 0.35) ni problemas de normalidad (Jarque-Bera p = 0.90), lo cual es buena señal.
+
+
+## Ejemplo 2: Media móvil — LakeHuron
+
+### Descripción de la serie
+
+
+```{r, echo=FALSE}
+#| label: lake-lectura
+
+datos_lake <- leer_serie(LakeHuron, fuente = "R datasets (LakeHuron)", unidad = "pies")
+datos_lake
+```
+
+La serie `LakeHuron` reporta el nivel anual del lago Hurón, con frecuencia
+`r attr(datos_lake, "frecuencia")`, desde `r min(datos_lake$fecha)` hasta
+`r max(datos_lake$fecha)`, con `r nrow(datos_lake)` observaciones.
+
+### Patrón y correspondencia con el método
+
+```{r, echo=FALSE}
+#| label: lake-graficos
+#| fig-height: 5
+
+graficar_serie(datos_lake, "Nivel anual del lago Huron")
+```
+
+```{r, echo=FALSE}
+#| label: lake-correlograma
+#| fig-height: 6
+
+correlograma(datos_lake)
+```
+
+El gráfico nos permite observar una muestra que el modelo tiene un nivel que oscila entre 576 y 582 pies sin tendencia
+a largo plazo ni estacionalidad, solo genera fluctuaciones suaves. El correlograma
+confirma esto: ACF con decaimiento gradual y PACF con un pico dominante en
+el rezago 1 (~0.75) — patrón de persistencia de nivel, sin estructura de
+tendencia, coherente con el supuesto de la media móvil.
+
+### Prueba de hipótesis: Ljung-Box sobre la serie
+
+```{r, echo=FALSE}
+#| label: lake-ljungbox-serie
+
+T_l <- nrow(datos_lake)
+m_l <- min(floor(T_l/4), 24)
+y_l <- datos_lake$y
+media_l <- mean(y_l)
+r_lake <- numeric(m_l)
+for (h in 1:m_l) {
+  r_lake[h] <- (sum((y_l[1:(T_l-h)] - media_l) * (y_l[(1+h):T_l] - media_l)) / T_l) / (sum((y_l-media_l)^2)/T_l)
+}
+ljung_box(r_lake, T_l, m_l, 0)
+```
+
+- H0: la serie es ruido blanco vs H1: no lo es
+- Estadístico: Q_24, distribución χ²₂₄ bajo H0
+- Región de rechazo al 5%: Q > 36.42
+- Valor observado: Q = 203.24, valor p = 2.47e-30
+- Decisión: se rechaza H0
+- Lectura: fuerte estructura de persistencia temporal, coherente con un 
+  método de nivel.
+
+### Optimización de k
+
+```{r, echo=FALSE}
+#| label: lake-optimizacion
+
+n_lake <- nrow(datos_lake)
+h_lake <- min(12, floor(0.2 * n_lake))
+corte_lake <- n_lake - h_lake
+y_estim_lake <- datos_lake$y[1:corte_lake]
+y_valid_lake <- datos_lake$y[(corte_lake+1):n_lake]
+
+opt_lake <- optimizar(y_estim_lake, metodo = "mm", rejilla = 2:12)
+opt_lake$optimo
+
+k_optimo_lake <- opt_lake$optimo$parametro
+ajuste_lake <- ajustar_mm(y_estim_lake, k = k_optimo_lake)
+```
+
+```{r, echo=FALSE}
+#| label: lake-curva-mse
+#| fig-height: 4
+
+ggplot2::ggplot(opt_lake$rejilla_completa, ggplot2::aes(x = parametro, y = MSE)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_point() +
+  ggplot2::geom_point(data = opt_lake$optimo, ggplot2::aes(x = parametro, y = MSE), color = "red", size = 3) +
+  ggplot2::labs(title = "MSE vs k (media movil)", x = "k", y = "MSE")
+```
+
+Se evaluó k = 2 a 12 minimizando el MSE de un paso. El óptimo cayó en 
+k=2 (MSE=0.748), el borde inferior de la rejilla — esto indica que ventanas
+más largas diluyen la información reciente y aumentan el error, sugiriendo
+que el nivel del lago cambia con relativa rapidez, sin persistencia larga
+que aproveche un promedio de muchos periodos.
+
+### Medidas de error
+
+```{r, echo=FALSE}
+#| label: lake-medidas
+
+medidas(y_estim_lake, ajuste_lake$yhat)
+
+pron_lake <- ajuste_lake$pronosticar(h_lake)
+medidas(y_valid_lake, pron_lake, y_entrenamiento = y_estim_lake)
+```
+
+Un paso (estimación, k=2): MSE=0.748, MAD=0.672, MAPE=11.61%
+Extramuestral (validación): MSE=1.582, MAD=1.048, MAPE=18.13%, MASE=1.826
+(escalado contra el MAD del ingenuo de un paso en estimación)
+
+### Validación de errores
+
+```{r, echo=FALSE}
+#| label: lake-validacion
+#| fig-height: 6
+
+errores_lake <- y_estim_lake - ajuste_lake$yhat
+errores_lake_validos <- errores_lake[!is.na(errores_lake)]
+validacion_lake <- validar_errores(errores_lake_validos, m = min(floor(length(errores_lake_validos)/4), 24), p = 1)
+validacion_lake$prueba_t
+validacion_lake$ljung_box
+validacion_lake$jarque_bera
+validacion_lake$durbin_watson
+validacion_lake$grafico_errores
+```
+
+- Prueba t de media cero: t=-0.551, gl=83, valor p=0.583 → no se rechaza 
+  H0, sin sesgo (media de errores=-0.052, prácticamente cero).
+- Ljung-Box sobre errores: Q_20=48.45 (gl=m-p=21-1), valor crítico 31.41, 
+  valor p=0.00037 → se RECHAZA H0: quedan autocorrelaciones sin capturar 
+  en los errores.
+- Jarque-Bera: JB=2.99, valor p=0.224 → no se rechaza normalidad.
+- Durbin-Watson: d=1.14, notablemente alejado de 2, confirmando la 
+  autocorrelación positiva residual detectada por Ljung-Box.
+
+### Comparación contra el ingenuo
+
+```{r, echo=FALSE}
+#| label: lake-ingenuo
+
+pron_ingenuo_lake <- rep(y_estim_lake[corte_lake], h_lake)
+medidas(y_valid_lake, pron_ingenuo_lake, y_entrenamiento = y_estim_lake)
+```
+
+Ingenuo (validación): MSE=2.238, MAD=1.243, MAPE=21.51%
+La media móvil SÍ superó al ingenuo en las tres métricas de validación
+(MSE 1.582 vs 2.238; MAD 1.048 vs 1.243), confirmando que promediar 
+los últimos k=2 valores mejora sobre usar solo el último dato.
+
+### Conclusión
+Probé el modelo de media móvil con k = 2 y resultó ser el mejor según el MSE de un paso, aunque quedó justo en el límite de los valores que revisé. Al validarlo, le ganó al modelo ingenuo en las tres métricas (MSE de 1.582 contra 2.238). Pero cuando revisé los errores, me encontré con autocorrelación residual significativa (Ljung-Box p = 0.00037, Durbin-Watson d = 1.14), lo que me indica que todavía queda estructura sin capturar. Por suerte, no hubo sesgo (p = 0.583) ni problemas de normalidad (JB p = 0.224), lo cual es bueno.
+
+### Recomendación
+Este pronóstico podría servir como referencia de corto plazo para el manejo operativo del nivel del lago (por ejemplo, para navegación o gestión portuaria), ya que mejora lo que hace el modelo ingenuo. Sin embargo, la autocorrelación residual sugiere que k = 2 es muy corto para capturar toda la estructura de la serie, y un método más flexible (como Holt) podría anticipar mejor los cambios de nivel a mediano plazo.
+
+
+## Ejemplo 3: SES — discoveries
+
+### Descripción de la serie
+
+```{r, echo=FALSE} 
+#| label: disc-lectura
+
+datos3 <- leer_serie(discoveries, fuente = "R datasets (discoveries)", unidad = "numero de inventos")
+datos3
+```
+
+La serie `discoveries` reporta el número de grandes descubrimientos e
+inventos por año, con frecuencia `r attr(datos3, "frecuencia")`, desde
+`r min(datos3$fecha)` hasta `r max(datos3$fecha)`, con `r nrow(datos3)`
+observaciones. Es un conteo de valores enteros no negativos, incluyendo
+ceros en algunos años.
+
+### Patrón y correspondencia con el método
+
+```{r, echo=FALSE}
+#| label: disc-graficos
+#| fig-height: 5
+
+graficar_serie(datos3, "Grandes inventos por año")
+```
+
+```{r, echo=FALSE}
+#| label: disc-correlograma
+#| fig-height: 6
+
+correlograma(datos3)
+```
+
+La serie oscila con bastante ruido alrededor de un nivel relativamente
+estable (mayormente entre 0 y 7), sin tendencia de largo plazo clara.
+El correlograma muestra solo los rezagos 1-2 levemente fuera de la banda,
+sin estructura fuerte — corresponde al supuesto de SES: nivel con
+actualización suave, sin tendencia.
+
+### Prueba de hipótesis: Ljung-Box sobre la serie
+
+```{r, echo=FALSE}
+#| label: disc-ljungbox-serie
+
+T_d <- nrow(datos3)
+m_d <- min(floor(T_d/4), 24)
+y_d <- datos3$y
+media_d <- mean(y_d)
+r_disc <- numeric(m_d)
+for (h in 1:m_d) {
+  r_disc[h] <- (sum((y_d[1:(T_d-h)] - media_d) * (y_d[(1+h):T_d] - media_d)) / T_d) / (sum((y_d-media_d)^2)/T_d)
+}
+ljung_box(r_disc, T_d, m_d, 0)
+```
+
+- H0: ruido blanco vs H1: no lo es
+- Estadístico Q_24, χ²₂₄ bajo H0
+- Región de rechazo al 5%: Q > 36.42
+- Valor observado: Q = 36.25, valor p = 0.0518
+- Decisión: NO se rechaza H0 (aunque muy cerca del límite del 5%)
+- Lectura: la serie está en el borde entre ruido blanco y algo de 
+  estructura débil, coherente con elegir un método simple como SES.
+
+### Optimización de alpha
+
+```{r, echo=FALSE}
+#| label: disc-optimizacion
+
+n3 <- nrow(datos3)
+h3 <- min(12, floor(0.2 * n3))
+corte3 <- n3 - h3
+y_estim3 <- datos3$y[1:corte3]
+y_valid3 <- datos3$y[(corte3+1):n3]
+
+opt_disc <- optimizar(y_estim3, metodo = "ses", rejilla = seq(0.02, 0.98, by = 0.02))
+opt_disc$optimo
+
+alpha_optimo_disc <- opt_disc$optimo$parametro
+ajuste_disc <- ajustar_ses(y_estim3, alpha = alpha_optimo_disc)
+```
+
+```{r, echo=FALSE}
+#| label: disc-curva-mse
+#| fig-height: 4
+
+ggplot2::ggplot(opt_disc$rejilla_completa, ggplot2::aes(x = parametro, y = MSE)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_point() +
+  ggplot2::geom_point(data = opt_disc$optimo, ggplot2::aes(x = parametro, y = MSE), color = "red", size = 3) +
+  ggplot2::labs(title = "MSE vs alpha (SES)", x = "alpha", y = "MSE")
+```
+
+Se evaluó alpha = 0.02 a 0.98. El óptimo cayó en alpha=0.22 (MSE=5.16),
+un punto interior claro (no en el borde de la rejilla), indicando que
+conviene ponderar considerablemente la historia acumulada por encima
+del dato más reciente, coherente con una serie ruidosa sin tendencia.
+
+### Medidas de error
+
+```{r, echo=FALSE}
+#| label: disc-medidas
+
+medidas(y_estim3, ajuste_disc$yhat)
+
+pron_disc <- ajuste_disc$pronosticar(h3)
+medidas(y_valid3, pron_disc, y_entrenamiento = y_estim3)
+```
+
+Un paso (estimación): MSE=5.16, MAD=1.78, MAPE=Inf (indefinido por 
+presencia de ceros en la serie)
+Extramuestral (validación): MSE=2.19, MAD=1.31, MAPE=Inf, MASE=0.615
+
+### Validación de errores
+
+```{r, echo=FALSE}
+#| label: disc-validacion
+#| fig-height: 6
+
+errores3 <- y_estim3 - ajuste_disc$yhat
+errores3_validos <- errores3[!is.na(errores3)]
+validacion_disc <- validar_errores(errores3_validos, m = min(floor(length(errores3_validos)/4), 24), p = 1)
+validacion_disc$prueba_t
+validacion_disc$ljung_box
+validacion_disc$jarque_bera
+validacion_disc$durbin_watson
+validacion_disc$grafico_errores
+```
+
+- Prueba t de media cero: t=-0.617, gl=86, valor p=0.539 → no se 
+  rechaza H0, sin sesgo.
+- Ljung-Box sobre errores: Q_20=20.36 (gl=21-1), valor crítico 31.41,
+  valor p=0.436 → no se rechaza H0, sin autocorrelación.
+- Jarque-Bera: JB=13.57, valor p=0.00113 → SE RECHAZA normalidad. 
+  Esperado en datos de conteo con ceros, que son naturalmente asimétricos.
+- Durbin-Watson: d=1.888, cercano a 2, sin evidencia fuerte de 
+  autocorrelación residual.
+
+### Comparación contra el ingenuo
+
+```{r, echo=FALSE}
+#| label: disc-ingenuo
+
+pron_ingenuo_disc <- rep(y_estim3[corte3], h3)
+medidas(y_valid3, pron_ingenuo_disc, y_entrenamiento = y_estim3)
+```
+
+
+Ingenuo (validación): MSE=7.75, MAD=2.42
+SES superó claramente al ingenuo: MSE casi 4 veces menor (2.19 vs 7.75),
+MASE=0.615 confirma la mejora.
+
+### Conclusión
+Ajusté el modelo SES con alpha = 0.22, que fue el valor óptimo dentro del rango que probé según el MSE de un paso. En validación le ganó por mucho al modelo ingenuo (MSE de 2.19 contra 7.75, MASE de 0.615). No encontré sesgo (t p = 0.539) ni autocorrelación residual (Ljung-Box p = 0.436), pero los errores no son normales (Jarque-Bera p = 0.00113), algo que tiene sentido porque son datos de conteo. El MAPE me quedó indefinido (Inf) porque la serie tiene ceros, lo cual es una limitación propia de esa métrica para este tipo de datos.
+
+### Recomendación
+Este pronóstico le serviría a un historiador de la ciencia o a un organismo de política científica que necesite una referencia sencilla del ritmo esperado de grandes descubrimientos por año. Es útil para reportes generales de tendencia, no para predecir con precisión un año en particular. Hay dos límites claros: como los errores no son normales, los intervalos de confianza basados en la normal no son del todo confiables, y el MAPE no sirve para series con ceros, así que cualquier evaluación debería apoyarse en MSE, MAD o MASE, y no en el MAPE.
+
+
+
+## Ejemplo 4: Doble media móvil — airmiles
+
+### Descripción de la serie
+
+```{r, echo=FALSE}
+#| label: air-lectura
+
+datos_air <- leer_serie(airmiles, fuente = "R datasets (airmiles)", unidad = "millas")
+datos_air
+```
+
+La serie `airmiles` reporta las millas voladas por las aerolíneas de
+EE.UU., con frecuencia `r attr(datos_air, "frecuencia")`, desde
+`r min(datos_air$fecha)` hasta `r max(datos_air$fecha)`, con
+`r nrow(datos_air)` observaciones.
+
+### Patrón y correspondencia con el método
+
+```{r, echo=FALSE}
+#| label: air-graficos
+#| fig-height: 5
+
+graficar_serie(datos_air, "Millas voladas por aerolineas EE.UU.")
+```
+
+```{r, echo=FALSE}
+#| label: air-correlograma
+#| fig-height: 6
+
+correlograma(datos_air)
+```
+
+El gráfico presenta una muestra una tendencia claramente creciente y sostenida a lo largo de toda la serie, sin patrón estacional (es anual). Esto corresponde
+directamente al supuesto de la doble media móvil, que está diseñada
+específicamente para capturar nivel Y pendiente, a diferencia de la media
+móvil simple.
+
+### Optimización de k
+
+```{r, echo=FALSE}
+#| label: air-optimizacion
+
+n_air <- nrow(datos_air)
+h_air <- min(12, floor(0.2 * n_air))
+corte_air <- n_air - h_air
+y_estim_air <- datos_air$y[1:corte_air]
+y_valid_air <- datos_air$y[(corte_air+1):n_air]
+
+# rejilla ajustada a 2:10 porque el tramo de estimacion tiene 20 obs,
+# y la doble media movil exige 2k-1 <= n
+opt_air <- optimizar(y_estim_air, metodo = "dmm", rejilla = 2:10)
+opt_air$optimo
+
+k_optimo_air <- opt_air$optimo$parametro
+ajuste_air <- ajustar_dmm(y_estim_air, k = k_optimo_air)
+```
+
+```{r, echo=FALSE}
+#| label: air-curva-mse
+#| fig-height: 4
+
+ggplot2::ggplot(opt_air$rejilla_completa, ggplot2::aes(x = parametro, y = MSE)) +
+  ggplot2::geom_line() +
+  ggplot2::geom_point() +
+  ggplot2::geom_point(data = opt_air$optimo, ggplot2::aes(x = parametro, y = MSE), color = "red", size = 3) +
+  ggplot2::labs(title = "MSE vs k (doble media movil)", x = "k", y = "MSE")
+```
+
+Rejilla ajustada a k=2:10 (en vez de 2:12), porque el tramo de estimación
+tiene solo 20 observaciones, y la doble media móvil exige 2k-1 ≤ n. 
+El óptimo cayó en k=2 (MSE=980,548.4), el borde inferior de la rejilla,
+indicando que con una tendencia tan marcada, una ventana corta permite
+seguir mejor el crecimiento sin diluirlo con promedios largos.
+
+### Medidas de error
+
+```{r, echo=FALSE}
+#| label: air-medidas
+
+medidas(y_estim_air, ajuste_air$yhat)
+
+pron_air <- ajuste_air$pronosticar(h_air)
+medidas(y_valid_air, pron_air, y_entrenamiento = y_estim_air)
+```
+
+Un paso (estimación, k=2): MSE=980,548.4, MAD=745.85, MAPE=14.41%
+Extramuestral (validación): MSE=5,020,944, MAD=1,890.88, MAPE=6.72%,
+MASE=1.618
+
+### Validación de errores
+
+```{r, echo=FALSE}
+#| label: air-validacion
+#| fig-height: 6
+
+errores_air <- y_estim_air - ajuste_air$yhat
+errores_air_validos <- errores_air[!is.na(errores_air)]
+validacion_air <- validar_errores(errores_air_validos, m = min(floor(length(errores_air_validos)/4), 24), p = 2)
+validacion_air$prueba_t
+validacion_air$ljung_box
+validacion_air$jarque_bera
+validacion_air$durbin_watson
+validacion_air$grafico_errores
+```
+
+- Prueba t de media cero: t=1.13, gl=16, valor p=0.275 → no se rechaza
+  H0, sin sesgo significativo (aunque la media de errores es 269.2,
+  numéricamente no despreciable frente a la escala de la serie).
+- Ljung-Box sobre errores: Q_2=12.13 (gl=4-2, muy pocos rezagos por
+  lo corta que es la serie), valor crítico 5.99, valor p=0.0023 → 
+  SE RECHAZA H0: queda autocorrelación sin capturar. Limitación 
+  esperable dado lo corto de la serie, que deja muy pocos rezagos
+  disponibles para esta prueba.
+- Jarque-Bera: JB=1.61, valor p=0.448 → no se rechaza normalidad.
+- Durbin-Watson: d=1.46, moderadamente alejado de 2.
+
+### Comparación contra el ingenuo
+
+```{r, echo=FALSE}
+#| label: air-ingenuo
+
+pron_ingenuo_air <- rep(y_estim_air[corte_air], h_air)
+medidas(y_valid_air, pron_ingenuo_air, y_entrenamiento = y_estim_air)
+```
+
+Ingenuo (validación): MSE=32,979,150, MAD=5,254.50, MASE=4.496
+La doble media móvil superó ampliamente al ingenuo: MSE casi 6.6 veces
+menor. Esperado, dado que el ingenuo no puede capturar ninguna tendencia.
+
+### Conclusión
+Ajusté la doble media móvil con k = 2, que fue el mejor valor según la rejilla que armé, aunque quedó en el borde porque la serie es bastante corta. En validación le ganó por mucho al modelo ingenuo (MSE 6.6 veces menor, MASE de 1.618 contra 4.496 del ingenuo), lo que confirma que vale la pena capturar la tendencia de forma explícita cuando la serie crece tanto. Revisando los errores encontré autocorrelación residual (Ljung-Box p = 0.0023), pero con muy pocos grados de libertad (gl = 2) porque la serie es corta, así que esa conclusión no es tan fuerte.
+
+### Recomendación
+Este pronóstico le serviría a un analista de la industria aérea que necesite proyectar el crecimiento del tráfico de pasajeros a corto plazo (uno o dos años) para planear capacidad. El límite claro es que la serie es muy corta (solo 24 observaciones en total), lo que dificulta elegir un k robusto y también vuelve menos confiables las pruebas de diagnóstico sobre los errores. Cualquier uso de este pronóstico debería tener en cuenta esa fragilidad estadística y no extenderse a horizontes largos.
+
+
+## Ejemplo 5: Tendencia lineal — austres
+
+### Descripción de la serie
+
+```{r, echo=FALSE}
+#| label: aus-lectura
+
+datos_aus <- leer_serie(austres, fuente = "R datasets (austres)", unidad = "miles de personas")
+datos_aus
+```
+
+`austres`, de R datasets: número trimestral de residentes australianos,
+con frecuencia `r attr(datos_aus, "frecuencia")`, desde `r min(datos_aus$fecha)`
+hasta `r max(datos_aus$fecha)`, con `r nrow(datos_aus)` observaciones,
+en unidad: miles de personas.
+
+### Patrón y correspondencia con el método
+
+```{r, echo=FALSE}
+#| label: aus-graficos
+#| fig-height: 5
+
+graficar_serie(datos_aus, "Poblacion trimestral de Australia")
+```
+
+```{r, echo=FALSE}
+#| label: aus-correlograma
+#| fig-height: 6
+
+correlograma(datos_aus)
+```
+
+El gráfico muestra un crecimiento sostenido y aproximadamente constante
+en el tiempo. La PACF muestra un valor cercano a 1 en el rezago 1, con
+el resto de rezagos visualmente pequeños en comparación — patrón típico
+de una serie con tendencia fuerte, correspondiente al supuesto de la
+tendencia lineal.
+
+### Estimación
+
+```{r, echo=FALSE}
+#| label: aus-ajuste
+
+n_aus <- nrow(datos_aus)
+h_aus <- min(12, floor(0.2 * n_aus))
+corte_aus <- n_aus - h_aus
+y_estim_aus <- datos_aus$y[1:corte_aus]
+y_valid_aus <- datos_aus$y[(corte_aus+1):n_aus]
+
+ajuste_aus <- ajustar_tendencia(y_estim_aus, "lineal")
+ajuste_aus$parametros$tabla
+```
+
+beta0 = 12963.29 (SE robusto = 40.73), beta1 = 50.71 (SE robusto = 1.05),
+ambos significativos (p≈0). El SE robusto es notablemente mayor al 
+ordinario (beta1: 1.05 vs 0.49), señal de la fuerte autocorrelación 
+confirmada más abajo.
+
+### Medidas de error
+
+```{r, echo=FALSE}
+#| label: aus-medidas
+
+medidas(y_estim_aus, ajuste_aus$yhat)
+
+pron_aus <- ajuste_aus$pronosticar(h_aus)
+medidas(y_valid_aus, pron_aus, y_entrenamiento = y_estim_aus)
+```
+
+Un paso (estimación): MSE=8865.37, MAD=82.09, MAPE=0.55%
+Extramuestral (validación): MSE=44430.97, MAD=210.08, MAPE=1.21%,
+MASE=3.97
+
+### Validación de errores
+
+```{r, echo=FALSE}
+#| label: aus-validacion
+#| fig-height: 6
+
+errores_aus <- y_estim_aus - ajuste_aus$yhat
+validacion_aus <- validar_errores(errores_aus, m = min(floor(length(errores_aus)/4), 24), p = 2)
+validacion_aus$prueba_t
+validacion_aus$ljung_box
+validacion_aus$jarque_bera
+validacion_aus$durbin_watson
+validacion_aus$grafico_errores
+```
+
+- Prueba t de media cero: media de residuos = 0 por construcción 
+  matemática de mínimos cuadrados (propiedad de la regresión con 
+  intercepto, no un hallazgo sustantivo).
+- Ljung-Box sobre errores: Q_17=399.47 (gl=19-2), valor crítico 27.59,
+  valor p≈0 → SE RECHAZA fuertemente H0: fuerte autocorrelación residual.
+- Jarque-Bera: JB=4.24, valor p=0.120 → no se rechaza normalidad.
+- Durbin-Watson: d=0.017, extremadamente alejado de 2, confirmando
+  autocorrelación positiva muy fuerte en los residuos.
+
+### Comparación contra el ingenuo
+
+```{r, echo=FALSE}
+#| label: aus-ingenuo
+
+pron_ingenuo_aus <- rep(y_estim_aus[corte_aus], h_aus)
+medidas(y_valid_aus, pron_ingenuo_aus, y_entrenamiento = y_estim_aus)
+```
+
+Ingenuo (validación): MSE=133004.8, MAD=322.04
+La tendencia lineal superó claramente al ingenuo (MSE 3 veces menor),
+pese a la autocorrelación residual detectada.
+
+### Conclusión
+Ajusté la tendencia lineal por ecuaciones normales sobre la serie austres (beta1 = 50.71, muy significativo). En validación le ganó por mucho al modelo ingenuo (MSE de 44.430,97 contra 133.004,8). Sin embargo, al revisar los errores encontré una autocorrelación residual muy fuerte (Ljung-Box p ≈ 0, Durbin-Watson = 0.017), lo que me dice que la tendencia lineal, aunque sirve, no alcanza a capturar toda la estructura de la serie: probablemente queda algún componente sistemático sin modelar.
+
+### Recomendación
+Este pronóstico le serviría a una agencia de planeación urbana o demográfica que necesite proyectar el crecimiento poblacional de Australia para decisiones de infraestructura a mediano plazo (vivienda, transporte, servicios públicos). El límite claro es la fuerte autocorrelación residual: cualquier intervalo de confianza construido con los errores estándar ordinarios sería poco confiable (por eso también reporto los robustos), y sería bueno complementar este pronóstico con un modelo con más estructura antes de usarlo para decisiones de alta precisión o de muy corto plazo.
+
+
+## Ejemplo 6: Tendencia cuadrática — co2
+
+### Descripción de la serie
+
+```{r, echo=FALSE}
+#| label: co2-lectura
+
+datos_co2 <- leer_serie(co2, fuente = "R datasets (co2, Mauna Loa)", unidad = "ppm")
+datos_co2
+```
+
+`co2`, de R datasets: concentración mensual de CO2 atmosférico en Mauna 
+Loa, Hawaii, con frecuencia `r attr(datos_co2, "frecuencia")`, desde
+`r min(datos_co2$fecha)` hasta `r max(datos_co2$fecha)`, con
+`r nrow(datos_co2)` observaciones, en unidad: ppm.
+
+### Patrón y correspondencia con el método
+
+```{r, echo=FALSE}
+#| label: co2-graficos
+#| fig-height: 5
+
+graficar_serie(datos_co2, "CO2 atmosferico, Mauna Loa")
+```
+
+```{r, echo=FALSE}
+#| label: co2-correlograma
+#| fig-height: 6
+
+correlograma(datos_co2)
+```
+
+En el gráfico podemos observarque la muestra una tendencia creciente con clara curvatura (aceleración)
+a lo largo de la serie, superpuesta a un ciclo estacional mensual marcado.
+La curvatura de largo plazo corresponde al supuesto de la tendencia
+cuadrática, aunque la estacionalidad presente no es capturada por ningún
+componente del modelo — limitación relevante que se discute más abajo.
+
+### Estimación
+
+```{r, echo=FALSE}
+#| label: co2-ajuste
+
+n_co2 <- nrow(datos_co2)
+h_co2 <- min(12, floor(0.2 * n_co2))
+corte_co2 <- n_co2 - h_co2
+y_estim_co2 <- datos_co2$y[1:corte_co2]
+y_valid_co2 <- datos_co2$y[(corte_co2+1):n_co2]
+
+ajuste_co2 <- ajustar_tendencia(y_estim_co2, "cuadratica")
+ajuste_co2$parametros$tabla
+```
+
+beta0=314.86, beta1=0.0657 (SE robusto=0.0049), beta2=0.0000933 
+(SE robusto=0.0000107). Los tres coeficientes son altamente significativos
+(p≈0), confirmando la curvatura.
+
+### Medidas de error
+
+```{r, echo=FALSE}
+#| label: co2-medidas
+
+medidas(y_estim_co2, ajuste_co2$yhat)
+
+pron_co2 <- ajuste_co2$pronosticar(h_co2)
+medidas(y_valid_co2, pron_co2, y_entrenamiento = y_estim_co2)
+```
+
+Un paso (estimación): MSE=4.69, MAD=1.84, MAPE=0.55%
+Extramuestral (validación): MSE=6.90, MAD=2.04, MAPE=0.56%, MASE=1.904
+
+### Validación de errores
+
+```{r, echo=FALSE}
+#| label: co2-validacion
+#| fig-height: 6
+
+errores_co2 <- y_estim_co2 - ajuste_co2$yhat
+validacion_co2 <- validar_errores(errores_co2, m = min(floor(length(errores_co2)/4), 24), p = 3)
+validacion_co2$prueba_t
+validacion_co2$ljung_box
+validacion_co2$jarque_bera
+validacion_co2$durbin_watson
+validacion_co2$grafico_errores
+```
+
+- Prueba t de media cero: residuos suman cero por construcción de 
+  mínimos cuadrados con intercepto (no es hallazgo sustantivo).
+- Ljung-Box sobre errores: Q_21=3783.56 (gl=24-3), valor p≈0 → 
+  SE RECHAZA fuertemente H0, fuerte autocorrelación residual.
+- Jarque-Bera: JB=18.30, valor p=0.000106 → SE RECHAZA normalidad.
+- Durbin-Watson: d=0.306, muy alejado de 2.
+Ambos resultados (Ljung-Box y Durbin-Watson) son consistentes con la
+estacionalidad mensual no capturada por el modelo.
+
+### Comparación contra el ingenuo
+
+```{r, echo=FALSE}
+#| label: co2-ingenuo
+
+pron_ingenuo_co2 <- rep(y_estim_co2[corte_co2], h_co2)
+medidas(y_valid_co2, pron_ingenuo_co2, y_entrenamiento = y_estim_co2)
+```
+
+Ingenuo (validación): MSE=5.91, MAD=2.05
+El ingenuo obtuvo un MSE ligeramente MENOR que la tendencia cuadrática
+(5.91 vs 6.90) en este tramo de validación de 12 meses (un ciclo completo).
+Esto se explica porque ninguno de los dos métodos captura la estacionalidad:
+el ingenuo, al partir del último valor observado, coincide parcialmente 
+por azar con la fase estacional reciente, mientras la tendencia cuadrática
+solo sigue la curva suave de largo plazo, sin ajustarse al ciclo anual.
+
+### Conclusión
+Ajusté la tendencia cuadrática (beta2 = 0.0000933, muy significativo, lo que confirma la curvatura). Contra lo que esperaba, el método NO le ganó al ingenuo en el tramo de validación (MSE de 6.90 contra 5.91), y esto se explica por la fuerte estacionalidad mensual de la serie, que ningún componente del modelo alcanza a capturar. Al revisar los errores se confirma esa limitación: autocorrelación residual muy fuerte (Ljung-Box p ≈ 0, Durbin-Watson = 0.306) y no-normalidad (Jarque-Bera p = 0.0001).
+
+### Recomendación
+Este pronóstico le serviría a un organismo de política climática que necesite proyectar la trayectoria de largo plazo del CO2 atmosférico para escenarios de varias décadas (por ejemplo, para acuerdos de reducción de emisiones), donde lo relevante es la curvatura de aceleración y el ciclo mensual es ruido que no importa a esa escala. El límite es claro: no sirve para pronósticos mes a mes, donde la estacionalidad domina el error. Para eso haría falta un modelo con componente estacional explícito, que está fuera del alcance de los 8 métodos de esta caja de herramientas.
+
+## Ejemplo 7: Tendencia exponencial — JohnsonJohnson
+
+### Descripción de la serie
+
+```{r, echo=FALSE}
+#| label: jj-lectura
+
+datos_jj <- leer_serie(JohnsonJohnson, fuente = "R datasets (JohnsonJohnson)", unidad = "USD por accion")
+datos_jj
+```
+
+`JohnsonJohnson`, de R datasets: ganancias trimestrales por acción de
+Johnson & Johnson, con frecuencia `r attr(datos_jj, "frecuencia")`, desde
+`r min(datos_jj$fecha)` hasta `r max(datos_jj$fecha)`, con
+`r nrow(datos_jj)` observaciones, en unidad: USD por acción.
+
+### Patrón y correspondencia con el método
+
+```{r, echo=FALSE}
+#| label: jj-graficos
+#| fig-height: 5
+
+graficar_serie(datos_jj, "Ganancias trimestrales Johnson & Johnson")
+```
+
+```{r, echo=FALSE}
+#| label: jj-correlograma
+#| fig-height: 6
+
+correlograma(datos_jj)
+```
+
+El gráfico opdemos observar un crecimiento marcadamente multiplicativo (exponencial):
+la serie presenta un crecimiento cada vez más rápido en términos absolutos, con oscilaciones(cambios)
+que también aumentan de amplitud proporcionalmente al nivel — patrón
+característico de crecimiento porcentual constante, correspondiente al
+supuesto de la tendencia exponencial. Hay además estacionalidad trimestral
+visible, no capturada por este método.
+
+### Estimación
+
+```{r, echo=FALSE}
+#| label: jj-ajuste
+
+n_jj <- nrow(datos_jj)
+h_jj <- min(12, floor(0.2 * n_jj))
+corte_jj <- n_jj - h_jj
+y_estim_jj <- datos_jj$y[1:corte_jj]
+y_valid_jj <- datos_jj$y[(corte_jj+1):n_jj]
+
+ajuste_jj <- ajustar_tendencia(y_estim_jj, "exponencial")
+ajuste_jj$parametros$tabla
+```
+
+Ajuste sobre log(y): a=-0.6968 (SE robusto=0.0426), theta=0.0428 
+(SE robusto=0.001), ambos altamente significativos (p≈0). theta=0.0428
+implica una tasa de crecimiento trimestral aproximada del 4.3%.
+
+### Medidas de error
+
+```{r, echo=FALSE}
+#| label: jj-medidas
+
+medidas(y_estim_jj, ajuste_jj$yhat)
+
+pron_jj <- ajuste_jj$pronosticar(h_jj)
+medidas(y_valid_jj, pron_jj, y_entrenamiento = y_estim_jj)
+```
+
+Un paso (estimación): MSE=0.322, MAD=0.364, MAPE=11.90%
+Extramuestral (validación): MSE=7.738, MAD=1.845, MAPE=16.54%, MASE=4.14
+
+### Validación de errores
+
+```{r, echo=FALSE}
+#| label: jj-validacion
+#| fig-height: 6
+
+errores_jj <- y_estim_jj - ajuste_jj$yhat
+validacion_jj <- validar_errores(errores_jj, m = min(floor(length(errores_jj)/4), 24), p = 2)
+validacion_jj$prueba_t
+validacion_jj$ljung_box
+validacion_jj$jarque_bera
+validacion_jj$durbin_watson
+validacion_jj$grafico_errores
+```
+
+- Prueba t de media cero: t=0.209, gl=71, valor p=0.835 → no se rechaza
+  H0, sin sesgo (aquí sí es informativa, porque el ajuste es sobre 
+  log(y), no trivialmente cero como en las tendencias polinómicas).
+- Ljung-Box sobre errores: Q_16=108.60 (gl=18-2), valor p≈0 → SE 
+  RECHAZA H0, fuerte autocorrelación, coherente con la estacionalidad
+  trimestral no capturada.
+- Jarque-Bera: JB=111.53, valor p≈0 → SE RECHAZA fuertemente la
+  normalidad, el rechazo más marcado de los 8 ejemplos.
+- Durbin-Watson: d=1.291, moderadamente alejado de 2.
+
+### Comparación contra el ingenuo
+
+```{r, echo=FALSE}
+#| label: jj-ingenuo
+
+pron_ingenuo_jj <- rep(y_estim_jj[corte_jj], h_jj)
+medidas(y_valid_jj, pron_ingenuo_jj, y_entrenamiento = y_estim_jj)
+```
+
+Ingenuo (validación): MSE=22.53, MAD=4.22, MASE=9.46
+La tendencia exponencial superó ampliamente al ingenuo (MSE casi 3 
+veces menor, MASE 4.14 vs 9.46).
+
+### Conclusión
+Se ajustó la tendencia exponencial sobre log(ganancias), con theta = 0.0428 (un crecimiento trimestral de ≈4.3%, muy significativo). En validación le ganó por mucho al modelo ingenuo (MSE de 7.74 contra 22.53). Al revisar los errores encontré una autocorrelación residual fuerte (Ljung-Box p ≈ 0) que se puede atribuir a la estacionalidad trimestral que no modelé, y un rechazo fuerte de la normalidad (Jarque-Bera p ≈ 0), el más marcado de los 8 ejemplos, aunque sin evidencia de sesgo (t p = 0.835).
+
+### Recomendación
+Este serviría a un analista financiero que proyecta el crecimiento de largo plazo de las ganancias de la empresa para valorar la acción (por ejemplo, en un modelo de descuento de flujos), donde lo que importa es la tasa de crecimiento sostenida y no el resultado exacto de un trimestre. El límite es doble: (1) igual que con el CO2, este modelo solo captura la trayectoria de largo plazo, no el patrón trimestral, así que sirve para proyecciones de varios años pero no para el trimestre siguiente exacto; y (2) como los residuos no son normales, cualquier intervalo de confianza o prueba basada en la normal es poco confiable para esta serie.
+
+## Ejemplo 8: Holt lineal — WWWusage
+
+### Descripción de la serie
+
+```{r, echo=FALSE}
+#| label: www-lectura
+
+datos_www <- leer_serie(WWWusage, fuente = "R datasets (WWWusage)", unidad = "usuarios conectados")
+datos_www
+```
+
+`WWWusage`, de R datasets: número de usuarios conectados a un servidor,
+medido minuto a minuto, con `r nrow(datos_www)` observaciones, sin
+frecuencia calendario real — se trata como serie con paso constante de
+1 minuto.
+
+### Patrón y correspondencia con el método
+
+```{r, echo=FALSE}
+#| label: www-graficos
+#| fig-height: 5
+
+graficar_serie(datos_www, "Uso de internet, minuto a minuto")
+```
+
+```{r, echo=FALSE}
+#| label: www-correlograma
+#| fig-height: 6
+
+correlograma(datos_www)
+```
+
+El gráfico muestra tramos con tendencia clara (subidas y bajadas 
+sostenidas), sin estacionalidad, correspondiente al supuesto de Holt: 
+nivel + pendiente que cambian en el tiempo.
+
+### Optimización de (alpha, beta)
+
+```{r, echo=FALSE}
+#| label: www-optimizacion
+
+n_www <- nrow(datos_www)
+h_www <- min(12, floor(0.2 * n_www))
+corte_www <- n_www - h_www
+y_estim_www <- datos_www$y[1:corte_www]
+y_valid_www <- datos_www$y[(corte_www+1):n_www]
+
+opt_www <- optimizar(y_estim_www, metodo = "holt", rejilla = seq(0.05, 0.95, by = 0.05))
+opt_www$optimo
+
+alpha_opt_www <- opt_www$optimo$alpha
+beta_opt_www <- opt_www$optimo$beta
+ajuste_www <- ajustar_holt(y_estim_www, alpha = alpha_opt_www, beta = beta_opt_www)
+```
+
+```{r, echo=FALSE}
+#| label: www-mapa-calor
+#| fig-height: 5
+
+ggplot2::ggplot(opt_www$rejilla_completa, ggplot2::aes(x = alpha, y = beta, fill = MSE)) +
+  ggplot2::geom_tile() +
+  ggplot2::geom_point(data = opt_www$optimo, ggplot2::aes(x = alpha, y = beta), color = "red", size = 3, inherit.aes = FALSE) +
+  ggplot2::labs(title = "MSE sobre la rejilla (alpha, beta) - Holt", x = "alpha", y = "beta")
+```
+
+Se evaluó la rejilla completa alpha=beta=seq(0.05,0.95,by=0.05) 
+(19×19=361 combinaciones). El óptimo cayó en alpha=0.95, beta=0.95 
+(MSE=13.74), ambos en el borde superior de la rejilla — esto indica 
+que el nivel y la pendiente de esta serie cambian rápidamente, así 
+que el método necesita casi ignorar la historia antigua y adaptarse 
+casi por completo a lo más reciente, coherente con datos de tráfico 
+de red que pueden cambiar de régimen abruptamente.
+
+### Medidas de error
+
+```{r, echo=FALSE}
+#| label: www-medidas
+
+medidas(y_estim_www, ajuste_www$yhat)
+
+pron_www <- ajuste_www$pronosticar(h_www)
+medidas(y_valid_www, pron_www, y_entrenamiento = y_estim_www)
+```
+
+Un paso (estimación): MSE=13.74, MAD=3.05, MAPE=2.49%
+Extramuestral (validación): MSE=94.70, MAD=8.41, MAPE=3.94%, MASE=1.890
+
+### Validación de errores
+
+```{r, echo=FALSE}
+#| label: www-validacion
+#| fig-height: 6
+
+errores_www <- y_estim_www - ajuste_www$yhat
+errores_www_validos <- errores_www[!is.na(errores_www)]
+validacion_www <- validar_errores(errores_www_validos, m = min(floor(length(errores_www_validos)/4), 24), p = 2)
+validacion_www$prueba_t
+validacion_www$ljung_box
+validacion_www$jarque_bera
+validacion_www$durbin_watson
+validacion_www$grafico_errores
+```
+
+- Prueba t de media cero: t=0.248, gl=85, valor p=0.805 → no se 
+  rechaza H0, sin sesgo.
+- Ljung-Box sobre errores: Q_19=47.87 (gl=21-2), valor crítico 30.14,
+  valor p=0.00027 → se RECHAZA H0, queda algo de autocorrelación 
+  residual, pese al ajuste casi completo a los últimos datos.
+- Jarque-Bera: JB=0.798, valor p=0.671 → no se rechaza normalidad.
+- Durbin-Watson: d=1.50, moderadamente cerca de 2.
+
+### Comparación contra el ingenuo
+
+```{r, echo=FALSE}
+#| label: www-ingenuo
+
+pron_ingenuo_www <- rep(y_estim_www[corte_www], h_www)
+medidas(y_valid_www, pron_ingenuo_www, y_entrenamiento = y_estim_www)
+```
+
+Ingenuo (validación): MSE=1415.42, MAD=33.92, MASE=7.625
+Holt superó al ingenuo de forma contundente: MSE casi 15 veces menor,
+el mejor desempeño relativo de los 8 ejemplos.
+
+### Conclusión
+Se ajustó Holt con alpha=beta=0.95 (óptimo en el borde superior de la
+rejilla, MSE de un paso=13.74). En validación le ganó por mucho al modelo ingenuo (MSE 94.70 vs 1415.42, casi 15 veces menor). El modelo no presento sesgo 
+(t p=0.805) ni problemas de normalidad (JB p=0.671), aunque queda
+autocorrelación residual leve (Ljung-Box p=0.00027).
+
+### Recomendación
+El pronóstico prodria usarse en un administrador de infraestructura de red que necesite anticipar cambios de tráfico minuto a minuto para dimensionar recursos de servidor de forma dinámica (auto-escalado). El límite claro es que valores tan altos de alpha y beta (0.95 en ambos) hacen que el método sea muy sensible al ruido de corto plazo: sirve para anticipar cambios rápidos de tendencia, pero es poco estable si se necesita un pronóstico suave o si la serie tuviera datos atípicos puntuales, porque el método los seguiría casi de inmediato.
+
+## Ejemplo 9 (Contraejemplo): Media simple — AirPassengers
+
+### Justificación del contraejemplo
+
+```{r, echo=FALSE}
+#| label: cx-lectura
+
+datos_cx <- leer_serie(AirPassengers, fuente = "R datasets", unidad = "miles de pasajeros")
+datos_cx
+```
+
+Se aplica intencionalmente la media simple —que asume un nivel 
+constante— sobre `AirPassengers`, una serie con tendencia marcada y 
+fuerte estacionalidad mensual, violando directamente el supuesto 
+del método.
+
+```{r, echo=FALSE}
+#| label: cx-graficos
+#| fig-height: 5
+
+graficar_serie(datos_cx, "AirPassengers (contraejemplo)")
+```
+
+```{r, echo=FALSE}
+#| label: cx-correlograma
+#| fig-height: 6
+
+correlograma(datos_cx)
+```
+
+### Ajuste
+
+```{r, echo=FALSE}
+#| label: cx-ajuste
+
+n_cx <- nrow(datos_cx)
+h_cx <- min(12, floor(0.2 * n_cx))
+corte_cx <- n_cx - h_cx
+y_estim_cx <- datos_cx$y[1:corte_cx]
+y_valid_cx <- datos_cx$y[(corte_cx+1):n_cx]
+
+ajuste_cx <- ajustar_media(y_estim_cx)
+```
+
+### Medidas de error
+
+```{r, echo=FALSE}
+#| label: cx-medidas
+
+medidas(y_estim_cx, ajuste_cx$yhat)
+
+pron_cx <- ajuste_cx$pronosticar(h_cx)
+medidas(y_valid_cx, pron_cx, y_entrenamiento = y_estim_cx)
+```
+
+Un paso (estimación): MSE=11493.72, MAD=83.35, MAPE=26.83%
+Extramuestral (validación): MSE=51196.15, MAD=213.67, MAPE=43.62%,
+MASE=8.872
+
+### Comparación contra el ingenuo
+
+```{r, echo=FALSE}
+#| label: cx-ingenuo
+
+pron_ingenuo_cx <- rep(y_estim_cx[corte_cx], h_cx)
+medidas(y_valid_cx, pron_ingenuo_cx, y_entrenamiento = y_estim_cx)
+```
+
+Ingenuo (validación): MSE=10604.17, MAD=76.00
+La media simple resultó casi 5 VECES PEOR que el ingenuo (MSE 51196 
+vs 10604), evidencia directa del fracaso al ignorar la tendencia.
+
+### Validación de errores: evidencia del fracaso
+
+```{r, echo=FALSE}
+#| label: cx-validacion
+#| fig-height: 6
+
+errores_cx <- y_estim_cx - ajuste_cx$yhat
+errores_cx_validos <- errores_cx[!is.na(errores_cx)]
+validacion_cx <- validar_errores(errores_cx_validos, m = min(floor(length(errores_cx_validos)/4), 24), p = 0)
+validacion_cx$prueba_t
+validacion_cx$ljung_box
+validacion_cx$jarque_bera
+validacion_cx$durbin_watson
+validacion_cx$grafico_errores
+validacion_cx$grafico_correlograma
+```
+
+- Prueba t de media cero: t=13.57, gl=130, valor p<2.2e-16 → se 
+  RECHAZA fuertemente H0. Sesgo de +82.08: el método subestima 
+  sistemáticamente, porque el promedio de toda la historia queda 
+  muy por debajo de los niveles recientes de una serie creciente.
+- Ljung-Box sobre errores: Q_24=869.62, valor crítico 36.42, 
+  valor p≈0 (el más extremo de los 9 ejemplos) → autocorrelación 
+  residual masiva, sin capturar la estructura estacional y de 
+  tendencia de la serie.
+- Jarque-Bera: JB=23.48, valor p=0.000008 → se rechaza normalidad.
+- Durbin-Watson: d=0.086, el valor más extremo obtenido en toda la 
+  tarea, autocorrelación positiva casi perfecta.
+
+### Conclusión
+Este contraejemplo confirma, con evidencia estadística contundente, que la media simple falla cuando se aplica sobre una serie con tendencia y estacionalidad fuertes: es casi 5 veces peor que el ingenuo en validación, con un sesgo severo (t = 13.57, p < 2.2e-16) y la autocorrelación residual más extrema de todos los ejemplos (Ljung-Box p ≈ 0, Durbin-Watson = 0.086). Esto muestra por qué revisar que el patrón de la serie coincida con el supuesto del método, antes de ajustar cualquier cosa (el paso 2 del protocolo), es un paso crítico y no algo meramente formal.
+

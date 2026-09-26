@@ -1,0 +1,2160 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Tu Nombre Apellido">
+<meta name="dcterms.date" content="2026-09-25">
+
+<title>Caja de herramientas de pronóstico: ocho métodos escritos a mano en R</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="informe_files/libs/clipboard/clipboard.min.js"></script>
+<script src="informe_files/libs/quarto-html/quarto.js"></script>
+<script src="informe_files/libs/quarto-html/popper.min.js"></script>
+<script src="informe_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="informe_files/libs/quarto-html/anchor.min.js"></script>
+<link href="informe_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="informe_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="informe_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="informe_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="informe_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#ejemplo-1-media-simple-nile" id="toc-ejemplo-1-media-simple-nile" class="nav-link active" data-scroll-target="#ejemplo-1-media-simple-nile">Ejemplo 1: Media simple — Nile</a>
+  <ul class="collapse">
+  <li><a href="#descripción-de-la-serie" id="toc-descripción-de-la-serie" class="nav-link" data-scroll-target="#descripción-de-la-serie">Descripción de la serie</a></li>
+  <li><a href="#patrón-y-correspondencia-con-el-método" id="toc-patrón-y-correspondencia-con-el-método" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método">Patrón y correspondencia con el método</a></li>
+  <li><a href="#prueba-de-hipótesis-ljung-box-sobre-la-serie" id="toc-prueba-de-hipótesis-ljung-box-sobre-la-serie" class="nav-link" data-scroll-target="#prueba-de-hipótesis-ljung-box-sobre-la-serie">Prueba de hipótesis: Ljung-Box sobre la serie</a></li>
+  <li><a href="#partición-y-ajuste" id="toc-partición-y-ajuste" class="nav-link" data-scroll-target="#partición-y-ajuste">Partición y ajuste</a></li>
+  <li><a href="#medidas-de-error" id="toc-medidas-de-error" class="nav-link" data-scroll-target="#medidas-de-error">Medidas de error</a></li>
+  <li><a href="#validación-de-errores" id="toc-validación-de-errores" class="nav-link" data-scroll-target="#validación-de-errores">Validación de errores</a></li>
+  <li><a href="#comparación-contra-el-ingenuo" id="toc-comparación-contra-el-ingenuo" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo">Comparación contra el ingenuo</a></li>
+  <li><a href="#conclusión" id="toc-conclusión" class="nav-link" data-scroll-target="#conclusión">Conclusión</a></li>
+  <li><a href="#recomendación" id="toc-recomendación" class="nav-link" data-scroll-target="#recomendación">Recomendación</a></li>
+  </ul></li>
+  <li><a href="#ejemplo-2-media-móvil-lakehuron" id="toc-ejemplo-2-media-móvil-lakehuron" class="nav-link" data-scroll-target="#ejemplo-2-media-móvil-lakehuron">Ejemplo 2: Media móvil — LakeHuron</a>
+  <ul class="collapse">
+  <li><a href="#descripción-de-la-serie-1" id="toc-descripción-de-la-serie-1" class="nav-link" data-scroll-target="#descripción-de-la-serie-1">Descripción de la serie</a></li>
+  <li><a href="#patrón-y-correspondencia-con-el-método-1" id="toc-patrón-y-correspondencia-con-el-método-1" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-1">Patrón y correspondencia con el método</a></li>
+  <li><a href="#prueba-de-hipótesis-ljung-box-sobre-la-serie-1" id="toc-prueba-de-hipótesis-ljung-box-sobre-la-serie-1" class="nav-link" data-scroll-target="#prueba-de-hipótesis-ljung-box-sobre-la-serie-1">Prueba de hipótesis: Ljung-Box sobre la serie</a></li>
+  <li><a href="#optimización-de-k" id="toc-optimización-de-k" class="nav-link" data-scroll-target="#optimización-de-k">Optimización de k</a></li>
+  <li><a href="#medidas-de-error-1" id="toc-medidas-de-error-1" class="nav-link" data-scroll-target="#medidas-de-error-1">Medidas de error</a></li>
+  <li><a href="#validación-de-errores-1" id="toc-validación-de-errores-1" class="nav-link" data-scroll-target="#validación-de-errores-1">Validación de errores</a></li>
+  <li><a href="#comparación-contra-el-ingenuo-1" id="toc-comparación-contra-el-ingenuo-1" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-1">Comparación contra el ingenuo</a></li>
+  <li><a href="#conclusión-1" id="toc-conclusión-1" class="nav-link" data-scroll-target="#conclusión-1">Conclusión</a></li>
+  <li><a href="#recomendación-1" id="toc-recomendación-1" class="nav-link" data-scroll-target="#recomendación-1">Recomendación</a></li>
+  </ul></li>
+  <li><a href="#ejemplo-3-ses-discoveries" id="toc-ejemplo-3-ses-discoveries" class="nav-link" data-scroll-target="#ejemplo-3-ses-discoveries">Ejemplo 3: SES — discoveries</a>
+  <ul class="collapse">
+  <li><a href="#descripción-de-la-serie-2" id="toc-descripción-de-la-serie-2" class="nav-link" data-scroll-target="#descripción-de-la-serie-2">Descripción de la serie</a></li>
+  <li><a href="#patrón-y-correspondencia-con-el-método-2" id="toc-patrón-y-correspondencia-con-el-método-2" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-2">Patrón y correspondencia con el método</a></li>
+  <li><a href="#prueba-de-hipótesis-ljung-box-sobre-la-serie-2" id="toc-prueba-de-hipótesis-ljung-box-sobre-la-serie-2" class="nav-link" data-scroll-target="#prueba-de-hipótesis-ljung-box-sobre-la-serie-2">Prueba de hipótesis: Ljung-Box sobre la serie</a></li>
+  <li><a href="#optimización-de-alpha" id="toc-optimización-de-alpha" class="nav-link" data-scroll-target="#optimización-de-alpha">Optimización de alpha</a></li>
+  <li><a href="#medidas-de-error-2" id="toc-medidas-de-error-2" class="nav-link" data-scroll-target="#medidas-de-error-2">Medidas de error</a></li>
+  <li><a href="#validación-de-errores-2" id="toc-validación-de-errores-2" class="nav-link" data-scroll-target="#validación-de-errores-2">Validación de errores</a></li>
+  <li><a href="#comparación-contra-el-ingenuo-2" id="toc-comparación-contra-el-ingenuo-2" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-2">Comparación contra el ingenuo</a></li>
+  <li><a href="#conclusión-2" id="toc-conclusión-2" class="nav-link" data-scroll-target="#conclusión-2">Conclusión</a></li>
+  <li><a href="#recomendación-2" id="toc-recomendación-2" class="nav-link" data-scroll-target="#recomendación-2">Recomendación</a></li>
+  </ul></li>
+  <li><a href="#ejemplo-4-doble-media-móvil-airmiles" id="toc-ejemplo-4-doble-media-móvil-airmiles" class="nav-link" data-scroll-target="#ejemplo-4-doble-media-móvil-airmiles">Ejemplo 4: Doble media móvil — airmiles</a>
+  <ul class="collapse">
+  <li><a href="#descripción-de-la-serie-3" id="toc-descripción-de-la-serie-3" class="nav-link" data-scroll-target="#descripción-de-la-serie-3">Descripción de la serie</a></li>
+  <li><a href="#patrón-y-correspondencia-con-el-método-3" id="toc-patrón-y-correspondencia-con-el-método-3" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-3">Patrón y correspondencia con el método</a></li>
+  <li><a href="#optimización-de-k-1" id="toc-optimización-de-k-1" class="nav-link" data-scroll-target="#optimización-de-k-1">Optimización de k</a></li>
+  <li><a href="#medidas-de-error-3" id="toc-medidas-de-error-3" class="nav-link" data-scroll-target="#medidas-de-error-3">Medidas de error</a></li>
+  <li><a href="#validación-de-errores-3" id="toc-validación-de-errores-3" class="nav-link" data-scroll-target="#validación-de-errores-3">Validación de errores</a></li>
+  <li><a href="#comparación-contra-el-ingenuo-3" id="toc-comparación-contra-el-ingenuo-3" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-3">Comparación contra el ingenuo</a></li>
+  <li><a href="#conclusión-3" id="toc-conclusión-3" class="nav-link" data-scroll-target="#conclusión-3">Conclusión</a></li>
+  <li><a href="#recomendación-3" id="toc-recomendación-3" class="nav-link" data-scroll-target="#recomendación-3">Recomendación</a></li>
+  </ul></li>
+  <li><a href="#ejemplo-5-tendencia-lineal-austres" id="toc-ejemplo-5-tendencia-lineal-austres" class="nav-link" data-scroll-target="#ejemplo-5-tendencia-lineal-austres">Ejemplo 5: Tendencia lineal — austres</a>
+  <ul class="collapse">
+  <li><a href="#descripción-de-la-serie-4" id="toc-descripción-de-la-serie-4" class="nav-link" data-scroll-target="#descripción-de-la-serie-4">Descripción de la serie</a></li>
+  <li><a href="#patrón-y-correspondencia-con-el-método-4" id="toc-patrón-y-correspondencia-con-el-método-4" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-4">Patrón y correspondencia con el método</a></li>
+  <li><a href="#estimación" id="toc-estimación" class="nav-link" data-scroll-target="#estimación">Estimación</a></li>
+  <li><a href="#medidas-de-error-4" id="toc-medidas-de-error-4" class="nav-link" data-scroll-target="#medidas-de-error-4">Medidas de error</a></li>
+  <li><a href="#validación-de-errores-4" id="toc-validación-de-errores-4" class="nav-link" data-scroll-target="#validación-de-errores-4">Validación de errores</a></li>
+  <li><a href="#comparación-contra-el-ingenuo-4" id="toc-comparación-contra-el-ingenuo-4" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-4">Comparación contra el ingenuo</a></li>
+  <li><a href="#conclusión-4" id="toc-conclusión-4" class="nav-link" data-scroll-target="#conclusión-4">Conclusión</a></li>
+  <li><a href="#recomendación-4" id="toc-recomendación-4" class="nav-link" data-scroll-target="#recomendación-4">Recomendación</a></li>
+  </ul></li>
+  <li><a href="#ejemplo-6-tendencia-cuadrática-co2" id="toc-ejemplo-6-tendencia-cuadrática-co2" class="nav-link" data-scroll-target="#ejemplo-6-tendencia-cuadrática-co2">Ejemplo 6: Tendencia cuadrática — co2</a>
+  <ul class="collapse">
+  <li><a href="#descripción-de-la-serie-5" id="toc-descripción-de-la-serie-5" class="nav-link" data-scroll-target="#descripción-de-la-serie-5">Descripción de la serie</a></li>
+  <li><a href="#patrón-y-correspondencia-con-el-método-5" id="toc-patrón-y-correspondencia-con-el-método-5" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-5">Patrón y correspondencia con el método</a></li>
+  <li><a href="#estimación-1" id="toc-estimación-1" class="nav-link" data-scroll-target="#estimación-1">Estimación</a></li>
+  <li><a href="#medidas-de-error-5" id="toc-medidas-de-error-5" class="nav-link" data-scroll-target="#medidas-de-error-5">Medidas de error</a></li>
+  <li><a href="#validación-de-errores-5" id="toc-validación-de-errores-5" class="nav-link" data-scroll-target="#validación-de-errores-5">Validación de errores</a></li>
+  <li><a href="#comparación-contra-el-ingenuo-5" id="toc-comparación-contra-el-ingenuo-5" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-5">Comparación contra el ingenuo</a></li>
+  <li><a href="#conclusión-5" id="toc-conclusión-5" class="nav-link" data-scroll-target="#conclusión-5">Conclusión</a></li>
+  <li><a href="#recomendación-5" id="toc-recomendación-5" class="nav-link" data-scroll-target="#recomendación-5">Recomendación</a></li>
+  </ul></li>
+  <li><a href="#ejemplo-7-tendencia-exponencial-johnsonjohnson" id="toc-ejemplo-7-tendencia-exponencial-johnsonjohnson" class="nav-link" data-scroll-target="#ejemplo-7-tendencia-exponencial-johnsonjohnson">Ejemplo 7: Tendencia exponencial — JohnsonJohnson</a>
+  <ul class="collapse">
+  <li><a href="#descripción-de-la-serie-6" id="toc-descripción-de-la-serie-6" class="nav-link" data-scroll-target="#descripción-de-la-serie-6">Descripción de la serie</a></li>
+  <li><a href="#patrón-y-correspondencia-con-el-método-6" id="toc-patrón-y-correspondencia-con-el-método-6" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-6">Patrón y correspondencia con el método</a></li>
+  <li><a href="#estimación-2" id="toc-estimación-2" class="nav-link" data-scroll-target="#estimación-2">Estimación</a></li>
+  <li><a href="#medidas-de-error-6" id="toc-medidas-de-error-6" class="nav-link" data-scroll-target="#medidas-de-error-6">Medidas de error</a></li>
+  <li><a href="#validación-de-errores-6" id="toc-validación-de-errores-6" class="nav-link" data-scroll-target="#validación-de-errores-6">Validación de errores</a></li>
+  <li><a href="#comparación-contra-el-ingenuo-6" id="toc-comparación-contra-el-ingenuo-6" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-6">Comparación contra el ingenuo</a></li>
+  <li><a href="#conclusión-6" id="toc-conclusión-6" class="nav-link" data-scroll-target="#conclusión-6">Conclusión</a></li>
+  <li><a href="#recomendación-6" id="toc-recomendación-6" class="nav-link" data-scroll-target="#recomendación-6">Recomendación</a></li>
+  </ul></li>
+  <li><a href="#ejemplo-8-holt-lineal-wwwusage" id="toc-ejemplo-8-holt-lineal-wwwusage" class="nav-link" data-scroll-target="#ejemplo-8-holt-lineal-wwwusage">Ejemplo 8: Holt lineal — WWWusage</a>
+  <ul class="collapse">
+  <li><a href="#descripción-de-la-serie-7" id="toc-descripción-de-la-serie-7" class="nav-link" data-scroll-target="#descripción-de-la-serie-7">Descripción de la serie</a></li>
+  <li><a href="#patrón-y-correspondencia-con-el-método-7" id="toc-patrón-y-correspondencia-con-el-método-7" class="nav-link" data-scroll-target="#patrón-y-correspondencia-con-el-método-7">Patrón y correspondencia con el método</a></li>
+  <li><a href="#optimización-de-alpha-beta" id="toc-optimización-de-alpha-beta" class="nav-link" data-scroll-target="#optimización-de-alpha-beta">Optimización de (alpha, beta)</a></li>
+  <li><a href="#medidas-de-error-7" id="toc-medidas-de-error-7" class="nav-link" data-scroll-target="#medidas-de-error-7">Medidas de error</a></li>
+  <li><a href="#validación-de-errores-7" id="toc-validación-de-errores-7" class="nav-link" data-scroll-target="#validación-de-errores-7">Validación de errores</a></li>
+  <li><a href="#comparación-contra-el-ingenuo-7" id="toc-comparación-contra-el-ingenuo-7" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-7">Comparación contra el ingenuo</a></li>
+  <li><a href="#conclusión-7" id="toc-conclusión-7" class="nav-link" data-scroll-target="#conclusión-7">Conclusión</a></li>
+  <li><a href="#recomendación-7" id="toc-recomendación-7" class="nav-link" data-scroll-target="#recomendación-7">Recomendación</a></li>
+  </ul></li>
+  <li><a href="#ejemplo-9-contraejemplo-media-simple-airpassengers" id="toc-ejemplo-9-contraejemplo-media-simple-airpassengers" class="nav-link" data-scroll-target="#ejemplo-9-contraejemplo-media-simple-airpassengers">Ejemplo 9 (Contraejemplo): Media simple — AirPassengers</a>
+  <ul class="collapse">
+  <li><a href="#justificación-del-contraejemplo" id="toc-justificación-del-contraejemplo" class="nav-link" data-scroll-target="#justificación-del-contraejemplo">Justificación del contraejemplo</a></li>
+  <li><a href="#ajuste" id="toc-ajuste" class="nav-link" data-scroll-target="#ajuste">Ajuste</a></li>
+  <li><a href="#medidas-de-error-8" id="toc-medidas-de-error-8" class="nav-link" data-scroll-target="#medidas-de-error-8">Medidas de error</a></li>
+  <li><a href="#comparación-contra-el-ingenuo-8" id="toc-comparación-contra-el-ingenuo-8" class="nav-link" data-scroll-target="#comparación-contra-el-ingenuo-8">Comparación contra el ingenuo</a></li>
+  <li><a href="#validación-de-errores-evidencia-del-fracaso" id="toc-validación-de-errores-evidencia-del-fracaso" class="nav-link" data-scroll-target="#validación-de-errores-evidencia-del-fracaso">Validación de errores: evidencia del fracaso</a></li>
+  <li><a href="#conclusión-8" id="toc-conclusión-8" class="nav-link" data-scroll-target="#conclusión-8">Conclusión</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Caja de herramientas de pronóstico: ocho métodos escritos a mano en R</h1>
+<p class="subtitle lead">Series de tiempo univariadas, 3009297 - Semestre 2026-II</p>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Tu Nombre Apellido </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">September 25, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="ejemplo-1-media-simple-nile" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-1-media-simple-nile">Ejemplo 1: Media simple — Nile</h2>
+<section id="descripción-de-la-serie" class="level3">
+<h3 class="anchored" data-anchor-id="descripción-de-la-serie">Descripción de la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 100 × 3
+       t fecha          y
+   &lt;int&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1     1 1871-01-01  1120
+ 2     2 1872-01-01  1160
+ 3     3 1873-01-01   963
+ 4     4 1874-01-01  1210
+ 5     5 1875-01-01  1160
+ 6     6 1876-01-01  1160
+ 7     7 1877-01-01   813
+ 8     8 1878-01-01  1230
+ 9     9 1879-01-01  1370
+10    10 1880-01-01  1140
+# ℹ 90 more rows</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 1</code></pre>
+</div>
+</div>
+<p>La serie <code>Nile</code> reporta el flujo anual del río Nilo medido en Aswan, con frecuencia 1, desde 1871-01-01 hasta 1970-01-01, con 100 observaciones.</p>
+</section>
+<section id="patrón-y-correspondencia-con-el-método" class="level3">
+<h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método">Patrón y correspondencia con el método</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/nile-graficos-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/nile-correlograma-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>Al observar el gráfico pude apreciar que este no posee una tendencia lineal sostenida (a lo largo del tiempo). La serie parece que presenta una oscilación alrededor de un nivel relativamente estable, aunque también podemos observar que la gráfica posee periodos de cambios bruscos, un claro ejemplo es el año 1880 (el máximo pico) y el año 1913 aprox (el pico de caída). El ACF y el PACF tienden a decaer rápidamente a cero (esto pasa dentro de las bandas de confianza). Esta caída representa una serie estacionaria en media.</p>
+<p>Por las razones mencionadas anteriormente identificamos que la media simple era el mejor modelo para trabajar este primer ejemplo.</p>
+</section>
+<section id="prueba-de-hipótesis-ljung-box-sobre-la-serie" class="level3">
+<h3 class="anchored" data-anchor-id="prueba-de-hipótesis-ljung-box-sobre-la-serie">Prueba de hipótesis: Ljung-Box sobre la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 130.18
+
+$gl
+[1] 24
+
+$valor_critico
+[1] 36.41503
+
+$valor_p
+[1] 1.439183e-16</code></pre>
+</div>
+</div>
+<ul>
+<li>H0: la serie es ruido blanco (ρ_h = 0 para todo h) vs H1: no lo es (ρ_h != 0)</li>
+<li>Estadístico: Q_24 = T(T+2)Σr_h²/(T-h), distribución χ²₂₄ bajo H0</li>
+<li>Región de rechazo al 5%: Q &gt; 36.41</li>
+<li>Valor observado: Q = 130.18, valor p ≈ 0</li>
+<li>Decisión: se rechaza H0</li>
+<li>Lectura: la serie tiene estructura temporal, no es ruido puro — consistente con un nivel que puede cambiar en el tiempo.</li>
+</ul>
+</section>
+<section id="partición-y-ajuste" class="level3">
+<h3 class="anchored" data-anchor-id="partición-y-ajuste">Partición y ajuste</h3>
+<p>Tramo de estimación: t = 1 a 88 (1871-1958). Tramo de validación: h = 12 observaciones (1959-1970), siguiendo h = min(12, ⌊0.2×100⌋) = 12.</p>
+</section>
+<section id="medidas-de-error" class="level3">
+<h3 class="anchored" data-anchor-id="medidas-de-error">Medidas de error</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 31112.49
+
+$MAD
+[1] 145.0566
+
+$MAPE
+[1] 17.88736
+
+$MASE
+[1] NA
+
+$n
+[1] 87</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 19867.93
+
+$MAD
+[1] 111.9943
+
+$MAPE
+[1] 13.59045
+
+$MASE
+[1] 0.8429367
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Un paso (estimación): MSE = 31112.49, MAD = 145.06, MAPE = 17.89% Extramuestral (validación): MSE = 19867.93, MAD = 111.99, MAPE = 13.59%, MASE = 0.843</p>
+</section>
+<section id="validación-de-errores" class="level3">
+<h3 class="anchored" data-anchor-id="validación-de-errores">Validación de errores</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  e
+t = -5.7182, df = 86, p-value = 1.526e-07
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ -124.76186  -60.39261
+sample estimates:
+mean of x 
+-92.57724 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 22.83916
+
+$gl
+[1] 21
+
+$valor_critico
+[1] 32.67057
+
+$valor_p
+[1] 0.3526137</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 0.2102289
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 0.9002215</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 0.9621467
+
+$gl
+[1] NA
+
+$valor_critico
+[1] NA
+
+$valor_p
+[1] NA</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/nile-validacion-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<ul>
+<li><p>Prueba t de media cero: t = -5.72, gl = 86, región de rechazo |t| &gt; [valor crítico t con 86 gl al 5%], valor p = 1.53e-07 → se rechaza H0. Los errores tienen media -92.58, significativamente distinta de cero: el método sobreestima sistemáticamente el caudal en el tramo de estimación.</p></li>
+<li><p>Ljung-Box sobre errores: Q_21 = 22.84 (gl = m-p = 21-0), valor crítico 32.67, valor p = 0.35 → no se rechaza H0, errores sin autocorrelación.</p></li>
+<li><p>Jarque-Bera: JB = 0.21, gl = 2, valor crítico 5.99, valor p = 0.90 → no se rechaza normalidad.</p></li>
+<li><p>Durbin-Watson: d = 0.96, alejado de 2, lo que sugiere posible autocorrelación positiva residual pese al resultado de Ljung-Box — matiz a considerar.</p></li>
+</ul>
+</section>
+<section id="comparación-contra-el-ingenuo" class="level3">
+<h3 class="anchored" data-anchor-id="comparación-contra-el-ingenuo">Comparación contra el ingenuo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 19685
+
+$MAD
+[1] 111
+
+$MAPE
+[1] 13.45373
+
+$MASE
+[1] 0.8354529
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Ingenuo (validación): MSE = 19685.00, MAD = 111.00, MAPE = 13.45% El resultado obtenido en el modelo nos indicó que la media simple queda prácticamente empatada con el ingenuo (parte 7), ligeramente peor en las tres métricas. La diferencia entre ellos es que el ingenuo usa solo el último dato, mientras la media simple arrastra el sesgo de toda la historia (confirmado por la prueba t de sesgo).</p>
+</section>
+<section id="conclusión" class="level3">
+<h3 class="anchored" data-anchor-id="conclusión">Conclusión</h3>
+<p>Ajusté el modelo de media simple (recursiva) sobre el caudal del Nilo, que no tiene parámetros que estimar. En el tramo de validación, obtuve un MASE de 0.843, muy parecido al del pronóstico ingenuo (MSE de 19867.93 frente a 19685.00 del ingenuo). Al revisar los errores, encontré que el modelo tiene sesgo claro y significativo (t = -5.72, p = 1.53e-07): el método sobreestima el caudal en promedio unos 92.58 unidades. Sin embargo, los errores no presentan autocorrelación (Ljung-Box p = 0.35) ni problemas de normalidad (Jarque-Bera p = 0.90), lo cual es buena señal.</p>
+</section>
+<section id="recomendación" class="level3">
+<h3 class="anchored" data-anchor-id="recomendación">Recomendación</h3>
+<p>Este pronóstico serviría para estimar el caudal medio a largo plazo, por ejemplo para planificación hídrica muy general. Pero no lo usaría para decisiones que dependan del nivel exacto y reciente del río, porque el sesgo de -92.58 unidades está confirmado. Tiene sentido usarlo solo mientras el nivel de la serie se mantenga más o menos estable. De hecho, el límite del método queda claro justo ahí: ese sesgo indica que el supuesto de un nivel constante no se cumple del todo en toda la muestra.92.58 unidades. Sin embargo, los errores no presentan autocorrelación (Ljung-Box p = 0.35) ni problemas de normalidad (Jarque-Bera p = 0.90), lo cual es buena señal.</p>
+</section>
+</section>
+<section id="ejemplo-2-media-móvil-lakehuron" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-2-media-móvil-lakehuron">Ejemplo 2: Media móvil — LakeHuron</h2>
+<section id="descripción-de-la-serie-1" class="level3">
+<h3 class="anchored" data-anchor-id="descripción-de-la-serie-1">Descripción de la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 98 × 3
+       t fecha          y
+   &lt;int&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1     1 1875-01-01  580.
+ 2     2 1876-01-01  582.
+ 3     3 1877-01-01  581.
+ 4     4 1878-01-01  581.
+ 5     5 1879-01-01  580.
+ 6     6 1880-01-01  580.
+ 7     7 1881-01-01  580.
+ 8     8 1882-01-01  581.
+ 9     9 1883-01-01  581.
+10    10 1884-01-01  581.
+# ℹ 88 more rows</code></pre>
+</div>
+</div>
+<p>La serie <code>LakeHuron</code> reporta el nivel anual del lago Hurón, con frecuencia 1, desde 1875-01-01 hasta 1972-01-01, con 98 observaciones.</p>
+</section>
+<section id="patrón-y-correspondencia-con-el-método-1" class="level3">
+<h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-1">Patrón y correspondencia con el método</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/lake-graficos-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/lake-correlograma-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>El gráfico nos permite observar una muestra que el modelo tiene un nivel que oscila entre 576 y 582 pies sin tendencia a largo plazo ni estacionalidad, solo genera fluctuaciones suaves. El correlograma confirma esto: ACF con decaimiento gradual y PACF con un pico dominante en el rezago 1 (~0.75) — patrón de persistencia de nivel, sin estructura de tendencia, coherente con el supuesto de la media móvil.</p>
+</section>
+<section id="prueba-de-hipótesis-ljung-box-sobre-la-serie-1" class="level3">
+<h3 class="anchored" data-anchor-id="prueba-de-hipótesis-ljung-box-sobre-la-serie-1">Prueba de hipótesis: Ljung-Box sobre la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 203.2368
+
+$gl
+[1] 24
+
+$valor_critico
+[1] 36.41503
+
+$valor_p
+[1] 2.468367e-30</code></pre>
+</div>
+</div>
+<ul>
+<li>H0: la serie es ruido blanco vs H1: no lo es</li>
+<li>Estadístico: Q_24, distribución χ²₂₄ bajo H0</li>
+<li>Región de rechazo al 5%: Q &gt; 36.42</li>
+<li>Valor observado: Q = 203.24, valor p = 2.47e-30</li>
+<li>Decisión: se rechaza H0</li>
+<li>Lectura: fuerte estructura de persistencia temporal, coherente con un método de nivel.</li>
+</ul>
+</section>
+<section id="optimización-de-k" class="level3">
+<h3 class="anchored" data-anchor-id="optimización-de-k">Optimización de k</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>  parametro       MSE
+1         2 0.7479908</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/lake-curva-mse-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>Se evaluó k = 2 a 12 minimizando el MSE de un paso. El óptimo cayó en k=2 (MSE=0.748), el borde inferior de la rejilla — esto indica que ventanas más largas diluyen la información reciente y aumentan el error, sugiriendo que el nivel del lago cambia con relativa rapidez, sin persistencia larga que aproveche un promedio de muchos periodos.</p>
+</section>
+<section id="medidas-de-error-1" class="level3">
+<h3 class="anchored" data-anchor-id="medidas-de-error-1">Medidas de error</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 0.7479908
+
+$MAD
+[1] 0.6719643
+
+$MAPE
+[1] 0.1160735
+
+$MASE
+[1] NA
+
+$n
+[1] 84</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 1.581742
+
+$MAD
+[1] 1.048333
+
+$MAPE
+[1] 0.1812688
+
+$MASE
+[1] 1.82599
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Un paso (estimación, k=2): MSE=0.748, MAD=0.672, MAPE=11.61% Extramuestral (validación): MSE=1.582, MAD=1.048, MAPE=18.13%, MASE=1.826 (escalado contra el MAD del ingenuo de un paso en estimación)</p>
+</section>
+<section id="validación-de-errores-1" class="level3">
+<h3 class="anchored" data-anchor-id="validación-de-errores-1">Validación de errores</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  e
+t = -0.5509, df = 83, p-value = 0.5832
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ -0.2406725  0.1362677
+sample estimates:
+  mean of x 
+-0.05220238 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 48.4507
+
+$gl
+[1] 20
+
+$valor_critico
+[1] 31.41043
+
+$valor_p
+[1] 0.000367634</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 2.990382
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 0.2242057</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 1.139188
+
+$gl
+[1] NA
+
+$valor_critico
+[1] NA
+
+$valor_p
+[1] NA</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/lake-validacion-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<ul>
+<li>Prueba t de media cero: t=-0.551, gl=83, valor p=0.583 → no se rechaza H0, sin sesgo (media de errores=-0.052, prácticamente cero).</li>
+<li>Ljung-Box sobre errores: Q_20=48.45 (gl=m-p=21-1), valor crítico 31.41, valor p=0.00037 → se RECHAZA H0: quedan autocorrelaciones sin capturar en los errores.</li>
+<li>Jarque-Bera: JB=2.99, valor p=0.224 → no se rechaza normalidad.</li>
+<li>Durbin-Watson: d=1.14, notablemente alejado de 2, confirmando la autocorrelación positiva residual detectada por Ljung-Box.</li>
+</ul>
+</section>
+<section id="comparación-contra-el-ingenuo-1" class="level3">
+<h3 class="anchored" data-anchor-id="comparación-contra-el-ingenuo-1">Comparación contra el ingenuo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 2.238408
+
+$MAD
+[1] 1.2425
+
+$MAPE
+[1] 0.2151369
+
+$MASE
+[1] 2.164191
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Ingenuo (validación): MSE=2.238, MAD=1.243, MAPE=21.51% La media móvil SÍ superó al ingenuo en las tres métricas de validación (MSE 1.582 vs 2.238; MAD 1.048 vs 1.243), confirmando que promediar los últimos k=2 valores mejora sobre usar solo el último dato.</p>
+</section>
+<section id="conclusión-1" class="level3">
+<h3 class="anchored" data-anchor-id="conclusión-1">Conclusión</h3>
+<p>Probé el modelo de media móvil con k = 2 y resultó ser el mejor según el MSE de un paso, aunque quedó justo en el límite de los valores que revisé. Al validarlo, le ganó al modelo ingenuo en las tres métricas (MSE de 1.582 contra 2.238). Pero cuando revisé los errores, me encontré con autocorrelación residual significativa (Ljung-Box p = 0.00037, Durbin-Watson d = 1.14), lo que me indica que todavía queda estructura sin capturar. Por suerte, no hubo sesgo (p = 0.583) ni problemas de normalidad (JB p = 0.224), lo cual es bueno.</p>
+</section>
+<section id="recomendación-1" class="level3">
+<h3 class="anchored" data-anchor-id="recomendación-1">Recomendación</h3>
+<p>Este pronóstico podría servir como referencia de corto plazo para el manejo operativo del nivel del lago (por ejemplo, para navegación o gestión portuaria), ya que mejora lo que hace el modelo ingenuo. Sin embargo, la autocorrelación residual sugiere que k = 2 es muy corto para capturar toda la estructura de la serie, y un método más flexible (como Holt) podría anticipar mejor los cambios de nivel a mediano plazo.</p>
+</section>
+</section>
+<section id="ejemplo-3-ses-discoveries" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-3-ses-discoveries">Ejemplo 3: SES — discoveries</h2>
+<section id="descripción-de-la-serie-2" class="level3">
+<h3 class="anchored" data-anchor-id="descripción-de-la-serie-2">Descripción de la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 100 × 3
+       t fecha          y
+   &lt;int&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1     1 1860-01-01     5
+ 2     2 1861-01-01     3
+ 3     3 1862-01-01     0
+ 4     4 1863-01-01     2
+ 5     5 1864-01-01     0
+ 6     6 1865-01-01     3
+ 7     7 1866-01-01     2
+ 8     8 1867-01-01     3
+ 9     9 1868-01-01     6
+10    10 1869-01-01     1
+# ℹ 90 more rows</code></pre>
+</div>
+</div>
+<p>La serie <code>discoveries</code> reporta el número de grandes descubrimientos e inventos por año, con frecuencia 1, desde 1860-01-01 hasta 1959-01-01, con 100 observaciones. Es un conteo de valores enteros no negativos, incluyendo ceros en algunos años.</p>
+</section>
+<section id="patrón-y-correspondencia-con-el-método-2" class="level3">
+<h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-2">Patrón y correspondencia con el método</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/disc-graficos-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/disc-correlograma-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>La serie oscila con bastante ruido alrededor de un nivel relativamente estable (mayormente entre 0 y 7), sin tendencia de largo plazo clara. El correlograma muestra solo los rezagos 1-2 levemente fuera de la banda, sin estructura fuerte — corresponde al supuesto de SES: nivel con actualización suave, sin tendencia.</p>
+</section>
+<section id="prueba-de-hipótesis-ljung-box-sobre-la-serie-2" class="level3">
+<h3 class="anchored" data-anchor-id="prueba-de-hipótesis-ljung-box-sobre-la-serie-2">Prueba de hipótesis: Ljung-Box sobre la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 36.25397
+
+$gl
+[1] 24
+
+$valor_critico
+[1] 36.41503
+
+$valor_p
+[1] 0.05184948</code></pre>
+</div>
+</div>
+<ul>
+<li>H0: ruido blanco vs H1: no lo es</li>
+<li>Estadístico Q_24, χ²₂₄ bajo H0</li>
+<li>Región de rechazo al 5%: Q &gt; 36.42</li>
+<li>Valor observado: Q = 36.25, valor p = 0.0518</li>
+<li>Decisión: NO se rechaza H0 (aunque muy cerca del límite del 5%)</li>
+<li>Lectura: la serie está en el borde entre ruido blanco y algo de estructura débil, coherente con elegir un método simple como SES.</li>
+</ul>
+</section>
+<section id="optimización-de-alpha" class="level3">
+<h3 class="anchored" data-anchor-id="optimización-de-alpha">Optimización de alpha</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>   parametro      MSE
+11      0.22 5.160193</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/disc-curva-mse-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>Se evaluó alpha = 0.02 a 0.98. El óptimo cayó en alpha=0.22 (MSE=5.16), un punto interior claro (no en el borde de la rejilla), indicando que conviene ponderar considerablemente la historia acumulada por encima del dato más reciente, coherente con una serie ruidosa sin tendencia.</p>
+</section>
+<section id="medidas-de-error-2" class="level3">
+<h3 class="anchored" data-anchor-id="medidas-de-error-2">Medidas de error</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 5.160193
+
+$MAD
+[1] 1.78197
+
+$MAPE
+[1] Inf
+
+$MASE
+[1] NA
+
+$n
+[1] 87</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 2.191068
+
+$MAD
+[1] 1.306877
+
+$MAPE
+[1] Inf
+
+$MASE
+[1] 0.6145854
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Un paso (estimación): MSE=5.16, MAD=1.78, MAPE=Inf (indefinido por presencia de ceros en la serie) Extramuestral (validación): MSE=2.19, MAD=1.31, MAPE=Inf, MASE=0.615</p>
+</section>
+<section id="validación-de-errores-2" class="level3">
+<h3 class="anchored" data-anchor-id="validación-de-errores-2">Validación de errores</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  e
+t = -0.61697, df = 86, p-value = 0.5389
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ -0.6366740  0.3350809
+sample estimates:
+ mean of x 
+-0.1507966 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 20.3582
+
+$gl
+[1] 20
+
+$valor_critico
+[1] 31.41043
+
+$valor_p
+[1] 0.4357325</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 13.57259
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 0.001129143</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 1.888073
+
+$gl
+[1] NA
+
+$valor_critico
+[1] NA
+
+$valor_p
+[1] NA</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/disc-validacion-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<ul>
+<li>Prueba t de media cero: t=-0.617, gl=86, valor p=0.539 → no se rechaza H0, sin sesgo.</li>
+<li>Ljung-Box sobre errores: Q_20=20.36 (gl=21-1), valor crítico 31.41, valor p=0.436 → no se rechaza H0, sin autocorrelación.</li>
+<li>Jarque-Bera: JB=13.57, valor p=0.00113 → SE RECHAZA normalidad. Esperado en datos de conteo con ceros, que son naturalmente asimétricos.</li>
+<li>Durbin-Watson: d=1.888, cercano a 2, sin evidencia fuerte de autocorrelación residual.</li>
+</ul>
+</section>
+<section id="comparación-contra-el-ingenuo-2" class="level3">
+<h3 class="anchored" data-anchor-id="comparación-contra-el-ingenuo-2">Comparación contra el ingenuo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 7.75
+
+$MAD
+[1] 2.416667
+
+$MAPE
+[1] Inf
+
+$MASE
+[1] 1.136486
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Ingenuo (validación): MSE=7.75, MAD=2.42 SES superó claramente al ingenuo: MSE casi 4 veces menor (2.19 vs 7.75), MASE=0.615 confirma la mejora.</p>
+</section>
+<section id="conclusión-2" class="level3">
+<h3 class="anchored" data-anchor-id="conclusión-2">Conclusión</h3>
+<p>Ajusté el modelo SES con alpha = 0.22, que fue el valor óptimo dentro del rango que probé según el MSE de un paso. En validación le ganó por mucho al modelo ingenuo (MSE de 2.19 contra 7.75, MASE de 0.615). No encontré sesgo (t p = 0.539) ni autocorrelación residual (Ljung-Box p = 0.436), pero los errores no son normales (Jarque-Bera p = 0.00113), algo que tiene sentido porque son datos de conteo. El MAPE me quedó indefinido (Inf) porque la serie tiene ceros, lo cual es una limitación propia de esa métrica para este tipo de datos.</p>
+</section>
+<section id="recomendación-2" class="level3">
+<h3 class="anchored" data-anchor-id="recomendación-2">Recomendación</h3>
+<p>Este pronóstico le serviría a un historiador de la ciencia o a un organismo de política científica que necesite una referencia sencilla del ritmo esperado de grandes descubrimientos por año. Es útil para reportes generales de tendencia, no para predecir con precisión un año en particular. Hay dos límites claros: como los errores no son normales, los intervalos de confianza basados en la normal no son del todo confiables, y el MAPE no sirve para series con ceros, así que cualquier evaluación debería apoyarse en MSE, MAD o MASE, y no en el MAPE.</p>
+</section>
+</section>
+<section id="ejemplo-4-doble-media-móvil-airmiles" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-4-doble-media-móvil-airmiles">Ejemplo 4: Doble media móvil — airmiles</h2>
+<section id="descripción-de-la-serie-3" class="level3">
+<h3 class="anchored" data-anchor-id="descripción-de-la-serie-3">Descripción de la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 24 × 3
+       t fecha          y
+   &lt;int&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1     1 1937-01-01   412
+ 2     2 1938-01-01   480
+ 3     3 1939-01-01   683
+ 4     4 1940-01-01  1052
+ 5     5 1941-01-01  1385
+ 6     6 1942-01-01  1418
+ 7     7 1943-01-01  1634
+ 8     8 1944-01-01  2178
+ 9     9 1945-01-01  3362
+10    10 1946-01-01  5948
+# ℹ 14 more rows</code></pre>
+</div>
+</div>
+<p>La serie <code>airmiles</code> reporta las millas voladas por las aerolíneas de EE.UU., con frecuencia 1, desde 1937-01-01 hasta 1960-01-01, con 24 observaciones.</p>
+</section>
+<section id="patrón-y-correspondencia-con-el-método-3" class="level3">
+<h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-3">Patrón y correspondencia con el método</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/air-graficos-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/air-correlograma-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>El gráfico presenta una muestra una tendencia claramente creciente y sostenida a lo largo de toda la serie, sin patrón estacional (es anual). Esto corresponde directamente al supuesto de la doble media móvil, que está diseñada específicamente para capturar nivel Y pendiente, a diferencia de la media móvil simple.</p>
+</section>
+<section id="optimización-de-k-1" class="level3">
+<h3 class="anchored" data-anchor-id="optimización-de-k-1">Optimización de k</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>  parametro      MSE
+1         2 980548.4</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/air-curva-mse-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>Rejilla ajustada a k=2:10 (en vez de 2:12), porque el tramo de estimación tiene solo 20 observaciones, y la doble media móvil exige 2k-1 ≤ n.&nbsp; El óptimo cayó en k=2 (MSE=980,548.4), el borde inferior de la rejilla, indicando que con una tendencia tan marcada, una ventana corta permite seguir mejor el crecimiento sin diluirlo con promedios largos.</p>
+</section>
+<section id="medidas-de-error-3" class="level3">
+<h3 class="anchored" data-anchor-id="medidas-de-error-3">Medidas de error</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 980548.4
+
+$MAD
+[1] 745.8529
+
+$MAPE
+[1] 14.4054
+
+$MASE
+[1] NA
+
+$n
+[1] 17</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 5020944
+
+$MAD
+[1] 1890.875
+
+$MAPE
+[1] 6.719823
+
+$MASE
+[1] 1.617879
+
+$n
+[1] 4</code></pre>
+</div>
+</div>
+<p>Un paso (estimación, k=2): MSE=980,548.4, MAD=745.85, MAPE=14.41% Extramuestral (validación): MSE=5,020,944, MAD=1,890.88, MAPE=6.72%, MASE=1.618</p>
+</section>
+<section id="validación-de-errores-3" class="level3">
+<h3 class="anchored" data-anchor-id="validación-de-errores-3">Validación de errores</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  e
+t = 1.13, df = 16, p-value = 0.2751
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ -235.8247  774.2365
+sample estimates:
+mean of x 
+ 269.2059 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 12.12593
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 0.002327484</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 1.606283
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 0.4479195</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 1.457233
+
+$gl
+[1] NA
+
+$valor_critico
+[1] NA
+
+$valor_p
+[1] NA</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/air-validacion-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<ul>
+<li>Prueba t de media cero: t=1.13, gl=16, valor p=0.275 → no se rechaza H0, sin sesgo significativo (aunque la media de errores es 269.2, numéricamente no despreciable frente a la escala de la serie).</li>
+<li>Ljung-Box sobre errores: Q_2=12.13 (gl=4-2, muy pocos rezagos por lo corta que es la serie), valor crítico 5.99, valor p=0.0023 → SE RECHAZA H0: queda autocorrelación sin capturar. Limitación esperable dado lo corto de la serie, que deja muy pocos rezagos disponibles para esta prueba.</li>
+<li>Jarque-Bera: JB=1.61, valor p=0.448 → no se rechaza normalidad.</li>
+<li>Durbin-Watson: d=1.46, moderadamente alejado de 2.</li>
+</ul>
+</section>
+<section id="comparación-contra-el-ingenuo-3" class="level3">
+<h3 class="anchored" data-anchor-id="comparación-contra-el-ingenuo-3">Comparación contra el ingenuo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 32979150
+
+$MAD
+[1] 5254.5
+
+$MAPE
+[1] 18.45718
+
+$MASE
+[1] 4.495879
+
+$n
+[1] 4</code></pre>
+</div>
+</div>
+<p>Ingenuo (validación): MSE=32,979,150, MAD=5,254.50, MASE=4.496 La doble media móvil superó ampliamente al ingenuo: MSE casi 6.6 veces menor. Esperado, dado que el ingenuo no puede capturar ninguna tendencia.</p>
+</section>
+<section id="conclusión-3" class="level3">
+<h3 class="anchored" data-anchor-id="conclusión-3">Conclusión</h3>
+<p>Ajusté la doble media móvil con k = 2, que fue el mejor valor según la rejilla que armé, aunque quedó en el borde porque la serie es bastante corta. En validación le ganó por mucho al modelo ingenuo (MSE 6.6 veces menor, MASE de 1.618 contra 4.496 del ingenuo), lo que confirma que vale la pena capturar la tendencia de forma explícita cuando la serie crece tanto. Revisando los errores encontré autocorrelación residual (Ljung-Box p = 0.0023), pero con muy pocos grados de libertad (gl = 2) porque la serie es corta, así que esa conclusión no es tan fuerte.</p>
+</section>
+<section id="recomendación-3" class="level3">
+<h3 class="anchored" data-anchor-id="recomendación-3">Recomendación</h3>
+<p>Este pronóstico le serviría a un analista de la industria aérea que necesite proyectar el crecimiento del tráfico de pasajeros a corto plazo (uno o dos años) para planear capacidad. El límite claro es que la serie es muy corta (solo 24 observaciones en total), lo que dificulta elegir un k robusto y también vuelve menos confiables las pruebas de diagnóstico sobre los errores. Cualquier uso de este pronóstico debería tener en cuenta esa fragilidad estadística y no extenderse a horizontes largos.</p>
+</section>
+</section>
+<section id="ejemplo-5-tendencia-lineal-austres" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-5-tendencia-lineal-austres">Ejemplo 5: Tendencia lineal — austres</h2>
+<section id="descripción-de-la-serie-4" class="level3">
+<h3 class="anchored" data-anchor-id="descripción-de-la-serie-4">Descripción de la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 89 × 3
+       t fecha           y
+   &lt;int&gt; &lt;date&gt;      &lt;dbl&gt;
+ 1     1 1971-02-01 13067.
+ 2     2 1971-05-01 13130.
+ 3     3 1971-08-01 13198.
+ 4     4 1971-11-01 13254.
+ 5     5 1972-02-01 13304.
+ 6     6 1972-05-01 13354.
+ 7     7 1972-08-01 13409.
+ 8     8 1972-11-01 13459.
+ 9     9 1973-02-01 13504.
+10    10 1973-05-01 13553.
+# ℹ 79 more rows</code></pre>
+</div>
+</div>
+<p><code>austres</code>, de R datasets: número trimestral de residentes australianos, con frecuencia 4, desde 1971-02-01 hasta 1993-02-01, con 89 observaciones, en unidad: miles de personas.</p>
+</section>
+<section id="patrón-y-correspondencia-con-el-método-4" class="level3">
+<h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-4">Patrón y correspondencia con el método</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/aus-graficos-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/aus-correlograma-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>El gráfico muestra un crecimiento sostenido y aproximadamente constante en el tiempo. La PACF muestra un valor cercano a 1 en el rezago 1, con el resto de rezagos visualmente pequeños en comparación — patrón típico de una serie con tendencia fuerte, correspondiente al supuesto de la tendencia lineal.</p>
+</section>
+<section id="estimación" class="level3">
+<h3 class="anchored" data-anchor-id="estimación">Estimación</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>      coeficiente  estimacion     se_ols se_robusto        t valor_p
+beta0       beta0 12963.28824 21.9579492  40.732778 590.3688       0
+beta1       beta1    50.70746  0.4891637   1.049052 103.6615       0</code></pre>
+</div>
+</div>
+<p>beta0 = 12963.29 (SE robusto = 40.73), beta1 = 50.71 (SE robusto = 1.05), ambos significativos (p≈0). El SE robusto es notablemente mayor al ordinario (beta1: 1.05 vs 0.49), señal de la fuerte autocorrelación confirmada más abajo.</p>
+</section>
+<section id="medidas-de-error-4" class="level3">
+<h3 class="anchored" data-anchor-id="medidas-de-error-4">Medidas de error</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 8865.367
+
+$MAD
+[1] 82.09324
+
+$MAPE
+[1] 0.5479923
+
+$MASE
+[1] NA
+
+$n
+[1] 77</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 44430.97
+
+$MAD
+[1] 210.0804
+
+$MAPE
+[1] 1.207126
+
+$MASE
+[1] 3.973548
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Un paso (estimación): MSE=8865.37, MAD=82.09, MAPE=0.55% Extramuestral (validación): MSE=44430.97, MAD=210.08, MAPE=1.21%, MASE=3.97</p>
+</section>
+<section id="validación-de-errores-4" class="level3">
+<h3 class="anchored" data-anchor-id="validación-de-errores-4">Validación de errores</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  e
+t = -2.6684e-13, df = 76, p-value = 1
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ -21.51095  21.51095
+sample estimates:
+    mean of x 
+-2.882039e-12 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 399.4676
+
+$gl
+[1] 17
+
+$valor_critico
+[1] 27.58711
+
+$valor_p
+[1] 2.39579e-74</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 4.235511
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 0.1203013</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 0.01705571
+
+$gl
+[1] NA
+
+$valor_critico
+[1] NA
+
+$valor_p
+[1] NA</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/aus-validacion-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<ul>
+<li>Prueba t de media cero: media de residuos = 0 por construcción matemática de mínimos cuadrados (propiedad de la regresión con intercepto, no un hallazgo sustantivo).</li>
+<li>Ljung-Box sobre errores: Q_17=399.47 (gl=19-2), valor crítico 27.59, valor p≈0 → SE RECHAZA fuertemente H0: fuerte autocorrelación residual.</li>
+<li>Jarque-Bera: JB=4.24, valor p=0.120 → no se rechaza normalidad.</li>
+<li>Durbin-Watson: d=0.017, extremadamente alejado de 2, confirmando autocorrelación positiva muy fuerte en los residuos.</li>
+</ul>
+</section>
+<section id="comparación-contra-el-ingenuo-4" class="level3">
+<h3 class="anchored" data-anchor-id="comparación-contra-el-ingenuo-4">Comparación contra el ingenuo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 133004.8
+
+$MAD
+[1] 322.0417
+
+$MAPE
+[1] 1.840511
+
+$MASE
+[1] 6.091229
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Ingenuo (validación): MSE=133004.8, MAD=322.04 La tendencia lineal superó claramente al ingenuo (MSE 3 veces menor), pese a la autocorrelación residual detectada.</p>
+</section>
+<section id="conclusión-4" class="level3">
+<h3 class="anchored" data-anchor-id="conclusión-4">Conclusión</h3>
+<p>Ajusté la tendencia lineal por ecuaciones normales sobre la serie austres (beta1 = 50.71, muy significativo). En validación le ganó por mucho al modelo ingenuo (MSE de 44.430,97 contra 133.004,8). Sin embargo, al revisar los errores encontré una autocorrelación residual muy fuerte (Ljung-Box p ≈ 0, Durbin-Watson = 0.017), lo que me dice que la tendencia lineal, aunque sirve, no alcanza a capturar toda la estructura de la serie: probablemente queda algún componente sistemático sin modelar.</p>
+</section>
+<section id="recomendación-4" class="level3">
+<h3 class="anchored" data-anchor-id="recomendación-4">Recomendación</h3>
+<p>Este pronóstico le serviría a una agencia de planeación urbana o demográfica que necesite proyectar el crecimiento poblacional de Australia para decisiones de infraestructura a mediano plazo (vivienda, transporte, servicios públicos). El límite claro es la fuerte autocorrelación residual: cualquier intervalo de confianza construido con los errores estándar ordinarios sería poco confiable (por eso también reporto los robustos), y sería bueno complementar este pronóstico con un modelo con más estructura antes de usarlo para decisiones de alta precisión o de muy corto plazo.</p>
+</section>
+</section>
+<section id="ejemplo-6-tendencia-cuadrática-co2" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-6-tendencia-cuadrática-co2">Ejemplo 6: Tendencia cuadrática — co2</h2>
+<section id="descripción-de-la-serie-5" class="level3">
+<h3 class="anchored" data-anchor-id="descripción-de-la-serie-5">Descripción de la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 468 × 3
+       t fecha          y
+   &lt;int&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1     1 1959-01-01  315.
+ 2     2 1959-02-01  316.
+ 3     3 1959-03-01  316.
+ 4     4 1959-04-01  318.
+ 5     5 1959-05-01  318.
+ 6     6 1959-06-01  318 
+ 7     7 1959-07-01  316.
+ 8     8 1959-08-01  315.
+ 9     9 1959-09-01  314.
+10    10 1959-10-01  313.
+# ℹ 458 more rows</code></pre>
+</div>
+</div>
+<p><code>co2</code>, de R datasets: concentración mensual de CO2 atmosférico en Mauna Loa, Hawaii, con frecuencia 12, desde 1959-01-01 hasta 1997-12-01, con 468 observaciones, en unidad: ppm.</p>
+</section>
+<section id="patrón-y-correspondencia-con-el-método-5" class="level3">
+<h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-5">Patrón y correspondencia con el método</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/co2-graficos-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/co2-correlograma-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>En el gráfico podemos observarque la muestra una tendencia creciente con clara curvatura (aceleración) a lo largo de la serie, superpuesta a un ciclo estacional mensual marcado. La curvatura de largo plazo corresponde al supuesto de la tendencia cuadrática, aunque la estacionalidad presente no es capturada por ningún componente del modelo — limitación relevante que se discute más abajo.</p>
+</section>
+<section id="estimación-1" class="level3">
+<h3 class="anchored" data-anchor-id="estimación-1">Estimación</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>      coeficiente   estimacion       se_ols  se_robusto          t valor_p
+beta0       beta0 3.148601e+02 3.064497e-01 0.460851717 1027.44456       0
+beta1       beta1 6.566284e-02 3.096800e-03 0.004884174   21.20345       0
+beta2       beta2 9.325810e-05 6.562089e-06 0.000010744   14.21165       0</code></pre>
+</div>
+</div>
+<p>beta0=314.86, beta1=0.0657 (SE robusto=0.0049), beta2=0.0000933 (SE robusto=0.0000107). Los tres coeficientes son altamente significativos (p≈0), confirmando la curvatura.</p>
+</section>
+<section id="medidas-de-error-5" class="level3">
+<h3 class="anchored" data-anchor-id="medidas-de-error-5">Medidas de error</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 4.685532
+
+$MAD
+[1] 1.835289
+
+$MAPE
+[1] 0.5450276
+
+$MASE
+[1] NA
+
+$n
+[1] 456</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 6.897816
+
+$MAD
+[1] 2.039565
+
+$MAPE
+[1] 0.5625053
+
+$MASE
+[1] 1.90375
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Un paso (estimación): MSE=4.69, MAD=1.84, MAPE=0.55% Extramuestral (validación): MSE=6.90, MAD=2.04, MAPE=0.56%, MASE=1.904</p>
+</section>
+<section id="validación-de-errores-5" class="level3">
+<h3 class="anchored" data-anchor-id="validación-de-errores-5">Validación de errores</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  e
+t = -3.2995e-12, df = 455, p-value = 1
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ -0.1994245  0.1994245
+sample estimates:
+    mean of x 
+-3.348273e-13 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 3783.561
+
+$gl
+[1] 21
+
+$valor_critico
+[1] 32.67057
+
+$valor_p
+[1] 0</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 18.29743
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 0.0001063563</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 0.3064934
+
+$gl
+[1] NA
+
+$valor_critico
+[1] NA
+
+$valor_p
+[1] NA</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/co2-validacion-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<ul>
+<li>Prueba t de media cero: residuos suman cero por construcción de mínimos cuadrados con intercepto (no es hallazgo sustantivo).</li>
+<li>Ljung-Box sobre errores: Q_21=3783.56 (gl=24-3), valor p≈0 → SE RECHAZA fuertemente H0, fuerte autocorrelación residual.</li>
+<li>Jarque-Bera: JB=18.30, valor p=0.000106 → SE RECHAZA normalidad.</li>
+<li>Durbin-Watson: d=0.306, muy alejado de 2. Ambos resultados (Ljung-Box y Durbin-Watson) son consistentes con la estacionalidad mensual no capturada por el modelo.</li>
+</ul>
+</section>
+<section id="comparación-contra-el-ingenuo-5" class="level3">
+<h3 class="anchored" data-anchor-id="comparación-contra-el-ingenuo-5">Comparación contra el ingenuo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 5.909275
+
+$MAD
+[1] 2.0525
+
+$MAPE
+[1] 0.5628217
+
+$MASE
+[1] 1.915824
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Ingenuo (validación): MSE=5.91, MAD=2.05 El ingenuo obtuvo un MSE ligeramente MENOR que la tendencia cuadrática (5.91 vs 6.90) en este tramo de validación de 12 meses (un ciclo completo). Esto se explica porque ninguno de los dos métodos captura la estacionalidad: el ingenuo, al partir del último valor observado, coincide parcialmente por azar con la fase estacional reciente, mientras la tendencia cuadrática solo sigue la curva suave de largo plazo, sin ajustarse al ciclo anual.</p>
+</section>
+<section id="conclusión-5" class="level3">
+<h3 class="anchored" data-anchor-id="conclusión-5">Conclusión</h3>
+<p>Ajusté la tendencia cuadrática (beta2 = 0.0000933, muy significativo, lo que confirma la curvatura). Contra lo que esperaba, el método NO le ganó al ingenuo en el tramo de validación (MSE de 6.90 contra 5.91), y esto se explica por la fuerte estacionalidad mensual de la serie, que ningún componente del modelo alcanza a capturar. Al revisar los errores se confirma esa limitación: autocorrelación residual muy fuerte (Ljung-Box p ≈ 0, Durbin-Watson = 0.306) y no-normalidad (Jarque-Bera p = 0.0001).</p>
+</section>
+<section id="recomendación-5" class="level3">
+<h3 class="anchored" data-anchor-id="recomendación-5">Recomendación</h3>
+<p>Este pronóstico le serviría a un organismo de política climática que necesite proyectar la trayectoria de largo plazo del CO2 atmosférico para escenarios de varias décadas (por ejemplo, para acuerdos de reducción de emisiones), donde lo relevante es la curvatura de aceleración y el ciclo mensual es ruido que no importa a esa escala. El límite es claro: no sirve para pronósticos mes a mes, donde la estacionalidad domina el error. Para eso haría falta un modelo con componente estacional explícito, que está fuera del alcance de los 8 métodos de esta caja de herramientas.</p>
+</section>
+</section>
+<section id="ejemplo-7-tendencia-exponencial-johnsonjohnson" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-7-tendencia-exponencial-johnsonjohnson">Ejemplo 7: Tendencia exponencial — JohnsonJohnson</h2>
+<section id="descripción-de-la-serie-6" class="level3">
+<h3 class="anchored" data-anchor-id="descripción-de-la-serie-6">Descripción de la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 84 × 3
+       t fecha          y
+   &lt;int&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1     1 1960-01-01  0.71
+ 2     2 1960-04-01  0.63
+ 3     3 1960-07-01  0.85
+ 4     4 1960-10-01  0.44
+ 5     5 1961-01-01  0.61
+ 6     6 1961-04-01  0.69
+ 7     7 1961-07-01  0.92
+ 8     8 1961-10-01  0.55
+ 9     9 1962-01-01  0.72
+10    10 1962-04-01  0.77
+# ℹ 74 more rows</code></pre>
+</div>
+</div>
+<p><code>JohnsonJohnson</code>, de R datasets: ganancias trimestrales por acción de Johnson &amp; Johnson, con frecuencia 4, desde 1960-01-01 hasta 1980-10-01, con 84 observaciones, en unidad: USD por acción.</p>
+</section>
+<section id="patrón-y-correspondencia-con-el-método-6" class="level3">
+<h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-6">Patrón y correspondencia con el método</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/jj-graficos-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/jj-correlograma-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>El gráfico opdemos observar un crecimiento marcadamente multiplicativo (exponencial): la serie presenta un crecimiento cada vez más rápido en términos absolutos, con oscilaciones(cambios) que también aumentan de amplitud proporcionalmente al nivel — patrón característico de crecimiento porcentual constante, correspondiente al supuesto de la tendencia exponencial. Hay además estacionalidad trimestral visible, no capturada por este método.</p>
+</section>
+<section id="estimación-2" class="level3">
+<h3 class="anchored" data-anchor-id="estimación-2">Estimación</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>      coeficiente  estimacion      se_ols   se_robusto         t valor_p
+a               a -0.69684245 0.035968441 0.0425778590 -19.37372       0
+theta       theta  0.04276881 0.000856351 0.0009955125  49.94309       0</code></pre>
+</div>
+</div>
+<p>Ajuste sobre log(y): a=-0.6968 (SE robusto=0.0426), theta=0.0428 (SE robusto=0.001), ambos altamente significativos (p≈0). theta=0.0428 implica una tasa de crecimiento trimestral aproximada del 4.3%.</p>
+</section>
+<section id="medidas-de-error-6" class="level3">
+<h3 class="anchored" data-anchor-id="medidas-de-error-6">Medidas de error</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 0.322189
+
+$MAD
+[1] 0.3636502
+
+$MAPE
+[1] 11.89865
+
+$MASE
+[1] NA
+
+$n
+[1] 72</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 7.738379
+
+$MAD
+[1] 1.844967
+
+$MAPE
+[1] 16.53795
+
+$MASE
+[1] 4.140097
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Un paso (estimación): MSE=0.322, MAD=0.364, MAPE=11.90% Extramuestral (validación): MSE=7.738, MAD=1.845, MAPE=16.54%, MASE=4.14</p>
+</section>
+<section id="validación-de-errores-6" class="level3">
+<h3 class="anchored" data-anchor-id="validación-de-errores-6">Validación de errores</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  e
+t = 0.20899, df = 71, p-value = 0.8351
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ -0.1202040  0.1483524
+sample estimates:
+mean of x 
+0.0140742 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 108.5986
+
+$gl
+[1] 16
+
+$valor_critico
+[1] 26.29623
+
+$valor_p
+[1] 8.277413e-16</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 111.5297
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 6.048416e-25</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 1.291405
+
+$gl
+[1] NA
+
+$valor_critico
+[1] NA
+
+$valor_p
+[1] NA</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/jj-validacion-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<ul>
+<li>Prueba t de media cero: t=0.209, gl=71, valor p=0.835 → no se rechaza H0, sin sesgo (aquí sí es informativa, porque el ajuste es sobre log(y), no trivialmente cero como en las tendencias polinómicas).</li>
+<li>Ljung-Box sobre errores: Q_16=108.60 (gl=18-2), valor p≈0 → SE RECHAZA H0, fuerte autocorrelación, coherente con la estacionalidad trimestral no capturada.</li>
+<li>Jarque-Bera: JB=111.53, valor p≈0 → SE RECHAZA fuertemente la normalidad, el rechazo más marcado de los 8 ejemplos.</li>
+<li>Durbin-Watson: d=1.291, moderadamente alejado de 2.</li>
+</ul>
+</section>
+<section id="comparación-contra-el-ingenuo-6" class="level3">
+<h3 class="anchored" data-anchor-id="comparación-contra-el-ingenuo-6">Comparación contra el ingenuo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 22.53285
+
+$MAD
+[1] 4.215
+
+$MAPE
+[1] 30.45778
+
+$MASE
+[1] 9.458439
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Ingenuo (validación): MSE=22.53, MAD=4.22, MASE=9.46 La tendencia exponencial superó ampliamente al ingenuo (MSE casi 3 veces menor, MASE 4.14 vs 9.46).</p>
+</section>
+<section id="conclusión-6" class="level3">
+<h3 class="anchored" data-anchor-id="conclusión-6">Conclusión</h3>
+<p>Se ajustó la tendencia exponencial sobre log(ganancias), con theta = 0.0428 (un crecimiento trimestral de ≈4.3%, muy significativo). En validación le ganó por mucho al modelo ingenuo (MSE de 7.74 contra 22.53). Al revisar los errores encontré una autocorrelación residual fuerte (Ljung-Box p ≈ 0) que se puede atribuir a la estacionalidad trimestral que no modelé, y un rechazo fuerte de la normalidad (Jarque-Bera p ≈ 0), el más marcado de los 8 ejemplos, aunque sin evidencia de sesgo (t p = 0.835).</p>
+</section>
+<section id="recomendación-6" class="level3">
+<h3 class="anchored" data-anchor-id="recomendación-6">Recomendación</h3>
+<p>Este serviría a un analista financiero que proyecta el crecimiento de largo plazo de las ganancias de la empresa para valorar la acción (por ejemplo, en un modelo de descuento de flujos), donde lo que importa es la tasa de crecimiento sostenida y no el resultado exacto de un trimestre. El límite es doble: (1) igual que con el CO2, este modelo solo captura la trayectoria de largo plazo, no el patrón trimestral, así que sirve para proyecciones de varios años pero no para el trimestre siguiente exacto; y (2) como los residuos no son normales, cualquier intervalo de confianza o prueba basada en la normal es poco confiable para esta serie.</p>
+</section>
+</section>
+<section id="ejemplo-8-holt-lineal-wwwusage" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-8-holt-lineal-wwwusage">Ejemplo 8: Holt lineal — WWWusage</h2>
+<section id="descripción-de-la-serie-7" class="level3">
+<h3 class="anchored" data-anchor-id="descripción-de-la-serie-7">Descripción de la serie</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 100 × 3
+       t fecha          y
+   &lt;int&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1     1 0001-01-01    88
+ 2     2 0002-01-01    84
+ 3     3 0003-01-01    85
+ 4     4 0004-01-01    85
+ 5     5 0005-01-01    84
+ 6     6 0006-01-01    85
+ 7     7 0007-01-01    83
+ 8     8 0008-01-01    85
+ 9     9 0009-01-01    88
+10    10 0010-01-01    89
+# ℹ 90 more rows</code></pre>
+</div>
+</div>
+<p><code>WWWusage</code>, de R datasets: número de usuarios conectados a un servidor, medido minuto a minuto, con 100 observaciones, sin frecuencia calendario real — se trata como serie con paso constante de 1 minuto.</p>
+</section>
+<section id="patrón-y-correspondencia-con-el-método-7" class="level3">
+<h3 class="anchored" data-anchor-id="patrón-y-correspondencia-con-el-método-7">Patrón y correspondencia con el método</h3>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/www-graficos-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/www-correlograma-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>El gráfico muestra tramos con tendencia clara (subidas y bajadas sostenidas), sin estacionalidad, correspondiente al supuesto de Holt: nivel + pendiente que cambian en el tiempo.</p>
+</section>
+<section id="optimización-de-alpha-beta" class="level3">
+<h3 class="anchored" data-anchor-id="optimización-de-alpha-beta">Optimización de (alpha, beta)</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>    alpha beta      MSE
+361  0.95 0.95 13.73749</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/www-mapa-calor-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<p>Se evaluó la rejilla completa alpha=beta=seq(0.05,0.95,by=0.05) (19×19=361 combinaciones). El óptimo cayó en alpha=0.95, beta=0.95 (MSE=13.74), ambos en el borde superior de la rejilla — esto indica que el nivel y la pendiente de esta serie cambian rápidamente, así que el método necesita casi ignorar la historia antigua y adaptarse casi por completo a lo más reciente, coherente con datos de tráfico de red que pueden cambiar de régimen abruptamente.</p>
+</section>
+<section id="medidas-de-error-7" class="level3">
+<h3 class="anchored" data-anchor-id="medidas-de-error-7">Medidas de error</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 13.73749
+
+$MAD
+[1] 3.054198
+
+$MAPE
+[1] 2.488589
+
+$MASE
+[1] NA
+
+$n
+[1] 86</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 94.69948
+
+$MAD
+[1] 8.408671
+
+$MAPE
+[1] 3.938519
+
+$MASE
+[1] 1.890321
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Un paso (estimación): MSE=13.74, MAD=3.05, MAPE=2.49% Extramuestral (validación): MSE=94.70, MAD=8.41, MAPE=3.94%, MASE=1.890</p>
+</section>
+<section id="validación-de-errores-7" class="level3">
+<h3 class="anchored" data-anchor-id="validación-de-errores-7">Validación de errores</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  e
+t = 0.24754, df = 85, p-value = 0.8051
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ -0.6995490  0.8985096
+sample estimates:
+ mean of x 
+0.09948029 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 47.87381
+
+$gl
+[1] 19
+
+$valor_critico
+[1] 30.14353
+
+$valor_p
+[1] 0.0002675136</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 0.7984928
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 0.6708254</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 1.502599
+
+$gl
+[1] NA
+
+$valor_critico
+[1] NA
+
+$valor_p
+[1] NA</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/www-validacion-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<ul>
+<li>Prueba t de media cero: t=0.248, gl=85, valor p=0.805 → no se rechaza H0, sin sesgo.</li>
+<li>Ljung-Box sobre errores: Q_19=47.87 (gl=21-2), valor crítico 30.14, valor p=0.00027 → se RECHAZA H0, queda algo de autocorrelación residual, pese al ajuste casi completo a los últimos datos.</li>
+<li>Jarque-Bera: JB=0.798, valor p=0.671 → no se rechaza normalidad.</li>
+<li>Durbin-Watson: d=1.50, moderadamente cerca de 2.</li>
+</ul>
+</section>
+<section id="comparación-contra-el-ingenuo-7" class="level3">
+<h3 class="anchored" data-anchor-id="comparación-contra-el-ingenuo-7">Comparación contra el ingenuo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 1415.417
+
+$MAD
+[1] 33.91667
+
+$MAPE
+[1] 15.68865
+
+$MASE
+[1] 7.624677
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Ingenuo (validación): MSE=1415.42, MAD=33.92, MASE=7.625 Holt superó al ingenuo de forma contundente: MSE casi 15 veces menor, el mejor desempeño relativo de los 8 ejemplos.</p>
+</section>
+<section id="conclusión-7" class="level3">
+<h3 class="anchored" data-anchor-id="conclusión-7">Conclusión</h3>
+<p>Se ajustó Holt con alpha=beta=0.95 (óptimo en el borde superior de la rejilla, MSE de un paso=13.74). En validación le ganó por mucho al modelo ingenuo (MSE 94.70 vs 1415.42, casi 15 veces menor). El modelo no presento sesgo (t p=0.805) ni problemas de normalidad (JB p=0.671), aunque queda autocorrelación residual leve (Ljung-Box p=0.00027).</p>
+</section>
+<section id="recomendación-7" class="level3">
+<h3 class="anchored" data-anchor-id="recomendación-7">Recomendación</h3>
+<p>El pronóstico prodria usarse en un administrador de infraestructura de red que necesite anticipar cambios de tráfico minuto a minuto para dimensionar recursos de servidor de forma dinámica (auto-escalado). El límite claro es que valores tan altos de alpha y beta (0.95 en ambos) hacen que el método sea muy sensible al ruido de corto plazo: sirve para anticipar cambios rápidos de tendencia, pero es poco estable si se necesita un pronóstico suave o si la serie tuviera datos atípicos puntuales, porque el método los seguiría casi de inmediato.</p>
+</section>
+</section>
+<section id="ejemplo-9-contraejemplo-media-simple-airpassengers" class="level2">
+<h2 class="anchored" data-anchor-id="ejemplo-9-contraejemplo-media-simple-airpassengers">Ejemplo 9 (Contraejemplo): Media simple — AirPassengers</h2>
+<section id="justificación-del-contraejemplo" class="level3">
+<h3 class="anchored" data-anchor-id="justificación-del-contraejemplo">Justificación del contraejemplo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 144 × 3
+       t fecha          y
+   &lt;int&gt; &lt;date&gt;     &lt;dbl&gt;
+ 1     1 1949-01-01   112
+ 2     2 1949-02-01   118
+ 3     3 1949-03-01   132
+ 4     4 1949-04-01   129
+ 5     5 1949-05-01   121
+ 6     6 1949-06-01   135
+ 7     7 1949-07-01   148
+ 8     8 1949-08-01   148
+ 9     9 1949-09-01   136
+10    10 1949-10-01   119
+# ℹ 134 more rows</code></pre>
+</div>
+</div>
+<p>Se aplica intencionalmente la media simple —que asume un nivel constante— sobre <code>AirPassengers</code>, una serie con tendencia marcada y fuerte estacionalidad mensual, violando directamente el supuesto del método.</p>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/cx-graficos-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<div class="cell">
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/cx-correlograma-1.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+</section>
+<section id="ajuste" class="level3">
+<h3 class="anchored" data-anchor-id="ajuste">Ajuste</h3>
+</section>
+<section id="medidas-de-error-8" class="level3">
+<h3 class="anchored" data-anchor-id="medidas-de-error-8">Medidas de error</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 11493.72
+
+$MAD
+[1] 83.3505
+
+$MAPE
+[1] 26.83101
+
+$MASE
+[1] NA
+
+$n
+[1] 131</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 51196.15
+
+$MAD
+[1] 213.6742
+
+$MAPE
+[1] 43.62152
+
+$MASE
+[1] 8.872053
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Un paso (estimación): MSE=11493.72, MAD=83.35, MAPE=26.83% Extramuestral (validación): MSE=51196.15, MAD=213.67, MAPE=43.62%, MASE=8.872</p>
+</section>
+<section id="comparación-contra-el-ingenuo-8" class="level3">
+<h3 class="anchored" data-anchor-id="comparación-contra-el-ingenuo-8">Comparación contra el ingenuo</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>$MSE
+[1] 10604.17
+
+$MAD
+[1] 76
+
+$MAPE
+[1] 14.25134
+
+$MASE
+[1] 3.155626
+
+$n
+[1] 12</code></pre>
+</div>
+</div>
+<p>Ingenuo (validación): MSE=10604.17, MAD=76.00 La media simple resultó casi 5 VECES PEOR que el ingenuo (MSE 51196 vs 10604), evidencia directa del fracaso al ignorar la tendencia.</p>
+</section>
+<section id="validación-de-errores-evidencia-del-fracaso" class="level3">
+<h3 class="anchored" data-anchor-id="validación-de-errores-evidencia-del-fracaso">Validación de errores: evidencia del fracaso</h3>
+<div class="cell">
+<div class="cell-output cell-output-stdout">
+<pre><code>
+    One Sample t-test
+
+data:  e
+t = 13.568, df = 130, p-value &lt; 2.2e-16
+alternative hypothesis: true mean is not equal to 0
+95 percent confidence interval:
+ 70.10828 94.04394
+sample estimates:
+mean of x 
+ 82.07611 </code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 869.6156
+
+$gl
+[1] 24
+
+$valor_critico
+[1] 36.41503
+
+$valor_p
+[1] 3.949847e-168</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 23.48156
+
+$gl
+[1] 2
+
+$valor_critico
+[1] 5.991465
+
+$valor_p
+[1] 7.962416e-06</code></pre>
+</div>
+<div class="cell-output cell-output-stdout">
+<pre><code>$estadistico
+[1] 0.08615988
+
+$gl
+[1] NA
+
+$valor_critico
+[1] NA
+
+$valor_p
+[1] NA</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/cx-validacion-1.png" class="img-fluid" width="768"></p>
+</div>
+<div class="cell-output-display">
+<p><img src="informe_files/figure-html/cx-validacion-2.png" class="img-fluid" width="768"></p>
+</div>
+</div>
+<ul>
+<li>Prueba t de media cero: t=13.57, gl=130, valor p&lt;2.2e-16 → se RECHAZA fuertemente H0. Sesgo de +82.08: el método subestima sistemáticamente, porque el promedio de toda la historia queda muy por debajo de los niveles recientes de una serie creciente.</li>
+<li>Ljung-Box sobre errores: Q_24=869.62, valor crítico 36.42, valor p≈0 (el más extremo de los 9 ejemplos) → autocorrelación residual masiva, sin capturar la estructura estacional y de tendencia de la serie.</li>
+<li>Jarque-Bera: JB=23.48, valor p=0.000008 → se rechaza normalidad.</li>
+<li>Durbin-Watson: d=0.086, el valor más extremo obtenido en toda la tarea, autocorrelación positiva casi perfecta.</li>
+</ul>
+</section>
+<section id="conclusión-8" class="level3">
+<h3 class="anchored" data-anchor-id="conclusión-8">Conclusión</h3>
+<p>Este contraejemplo confirma, con evidencia estadística contundente, que la media simple falla cuando se aplica sobre una serie con tendencia y estacionalidad fuertes: es casi 5 veces peor que el ingenuo en validación, con un sesgo severo (t = 13.57, p &lt; 2.2e-16) y la autocorrelación residual más extrema de todos los ejemplos (Ljung-Box p ≈ 0, Durbin-Watson = 0.086). Esto muestra por qué revisar que el patrón de la serie coincida con el supuesto del método, antes de ajustar cualquier cosa (el paso 2 del protocolo), es un paso crítico y no algo meramente formal.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
